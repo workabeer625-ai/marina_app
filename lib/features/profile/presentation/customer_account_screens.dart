@@ -24,7 +24,6 @@ class ApiProfileScreen extends ConsumerWidget {
     };
 
     return SafeArea(
-      top: false,
       child: RefreshIndicator(
         onRefresh: () => ref.refresh(customerProfileProvider.future),
         child: ListView(
@@ -110,7 +109,7 @@ class ApiProfileScreen extends ConsumerWidget {
                 ),
               ),
             ),
-            const SizedBox(height: 22),
+            const SizedBox(height: 16),
             _QuickGrid(),
             const SizedBox(height: 22),
             _GroupLabel(context.tr('sectionPreferences')),
@@ -772,7 +771,6 @@ class ApiFavoritesScreen extends ConsumerWidget {
     final culture = Localizations.localeOf(context).languageCode;
     final favorites = ref.watch(customerFavoritesProvider(culture));
     return SafeArea(
-      top: false,
       child: favorites.when(
         loading: () => const LoadingState(),
         error: (_, _) => ErrorState(

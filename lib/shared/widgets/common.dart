@@ -216,6 +216,42 @@ class GoldDivider extends StatelessWidget {
   }
 }
 
+
+/// Picks a fitting icon for a catalog category by matching its name
+/// (English or Arabic), with a rotating fallback set.
+IconData marinaCategoryIcon(String name, {int fallbackIndex = 0}) {
+  final n = name.toLowerCase();
+  if (n.contains('offer') || n.contains('sale') || n.contains('عرض')) {
+    return Icons.local_offer_rounded;
+  }
+  if (n.contains('new') || n.contains('وصل') || n.contains('جديد')) {
+    return Icons.fiber_new_rounded;
+  }
+  if (n.contains('season') || n.contains('موسم')) {
+    return Icons.calendar_month_rounded;
+  }
+  if (n.contains('shoe') || n.contains('حذاء') || n.contains('أحذية')) {
+    return Icons.ice_skating_rounded;
+  }
+  if (n.contains('kid') || n.contains('child') || n.contains('أطفال')) {
+    return Icons.child_care_rounded;
+  }
+  if (n.contains('accessor') || n.contains('إكسسوار') || n.contains('اكسسوار')) {
+    return Icons.watch_rounded;
+  }
+  if (n.contains('bag') || n.contains('حقيبة') || n.contains('حقائب')) {
+    return Icons.backpack_rounded;
+  }
+  const fallback = [
+    Icons.checkroom_rounded,
+    Icons.dry_cleaning_rounded,
+    Icons.hiking_rounded,
+    Icons.watch_rounded,
+    Icons.child_friendly_rounded,
+  ];
+  return fallback[fallbackIndex % fallback.length];
+}
+
 class EmptyState extends StatelessWidget {
   const EmptyState({
     super.key,
@@ -653,9 +689,14 @@ class MarinaSectionCard extends StatelessWidget {
               ]
             : const [
                 BoxShadow(
-                  color: Color(0x0F141420),
-                  blurRadius: 22,
-                  offset: Offset(0, 10),
+                  color: Color(0x1A141420),
+                  blurRadius: 24,
+                  offset: Offset(0, 12),
+                ),
+                BoxShadow(
+                  color: Color(0x0A141420),
+                  blurRadius: 6,
+                  offset: Offset(0, 3),
                 ),
               ],
       ),

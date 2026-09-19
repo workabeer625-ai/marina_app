@@ -34,7 +34,7 @@ class MarinaColors {
   static const softBlue = sand; // legacy alias — warm container tint
   static const ink = Color(0xFF171B22);
   static const muted = Color(0xFF6E727B);
-  static const line = Color(0xFFE7E2D6);
+  static const line = Color(0xFFE1DACA);
 
   // Night palette.
   static const nightBg = Color(0xFF0C1017);

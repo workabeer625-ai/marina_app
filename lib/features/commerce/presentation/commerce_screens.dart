@@ -20,7 +20,6 @@ class CartScreen extends ConsumerWidget {
     final cart = ref.watch(cartProvider);
     final p = MarinaPalette.of(context);
     return SafeArea(
-      top: false,
       child: cart.when(
         loading: () => const LoadingState(),
         error: (error, _) => ErrorState(
@@ -64,7 +63,13 @@ class CartScreen extends ConsumerWidget {
                         ),
                       ),
                       child: Text(
-                        '${data.items.length} ${context.tr('items')}',
+                        () {
+                          final count = data.items.length;
+                          final arabic =
+                              Localizations.localeOf(context).languageCode ==
+                                  'ar';
+                          return '$count ${arabic ? (count == 1 ? 'منتج' : 'منتجات') : (count == 1 ? 'item' : 'items')}';
+                        }(),
                         style: TextStyle(
                           color: p.gold,
                           fontSize: 12,

@@ -312,13 +312,6 @@ class _CategoryChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const icons = [
-      Icons.checkroom_outlined,
-      Icons.dry_cleaning_outlined,
-      Icons.hiking_outlined,
-      Icons.watch_outlined,
-      Icons.child_friendly_outlined,
-    ];
     final p = MarinaPalette.of(context);
     return Material(
       color: Colors.transparent,
@@ -335,20 +328,20 @@ class _CategoryChip extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: p.isDark ? p.surfaceSoft : Colors.white,
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: p.gold.withValues(alpha: .28)),
+                  border: Border.all(color: p.gold.withValues(alpha: .35)),
                   boxShadow: p.isDark
                       ? null
                       : [
                           BoxShadow(
-                            color: MarinaColors.navy.withValues(alpha: .07),
+                            color: MarinaColors.goldDeep.withValues(alpha: .1),
                             blurRadius: 16,
                             offset: const Offset(0, 8),
                           ),
                         ],
                 ),
                 child: Icon(
-                  icons[index % icons.length],
-                  color: p.isDark ? p.gold : MarinaColors.navy,
+                  marinaCategoryIcon(label, fallbackIndex: index),
+                  color: p.gold,
                   size: 25,
                 ),
               ),
@@ -611,6 +604,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final culture = Localizations.localeOf(context).languageCode;
     final query = _query(
       context,
       search: widget.search,
@@ -625,8 +619,26 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
       sort: sort,
     );
     final data = ref.watch(productListProvider(query));
+    var title = context.tr(widget.titleKey);
+    if (brandId != null) {
+      final name = ref
+          .watch(brandsProvider(Localizations.localeOf(context).languageCode))
+          .value
+          ?.where((x) => x.id == brandId)
+          .firstOrNull
+          ?.name;
+      if (name != null) title = name;
+    } else if (widget.categoryId != null) {
+      final name = ref
+          .watch(categoriesProvider(culture))
+          .value
+          ?.where((x) => x.id == widget.categoryId)
+          .firstOrNull
+          ?.name;
+      if (name != null) title = name;
+    }
     return MarinaPage(
-      title: context.tr(widget.titleKey),
+      title: title,
       actions: [
         PopupMenuButton<String>(
           initialValue: sort,
@@ -981,13 +993,6 @@ class CategoriesScreen extends ConsumerWidget {
                   itemCount: items.length,
                   separatorBuilder: (_, _) => const SizedBox(height: 12),
                   itemBuilder: (_, i) {
-                    const icons = [
-                      Icons.checkroom_rounded,
-                      Icons.dry_cleaning_rounded,
-                      Icons.hiking_rounded,
-                      Icons.watch_rounded,
-                      Icons.child_friendly_rounded,
-                    ];
                     final p = MarinaPalette.of(context);
                     return Material(
                       color: p.surface,
@@ -1020,7 +1025,10 @@ class CategoriesScreen extends ConsumerWidget {
                                   ),
                                 ),
                                 child: Icon(
-                                  icons[i % icons.length],
+                                  marinaCategoryIcon(
+                                    items[i].name,
+                                    fallbackIndex: i,
+                                  ),
                                   color: p.gold,
                                   size: 24,
                                 ),
