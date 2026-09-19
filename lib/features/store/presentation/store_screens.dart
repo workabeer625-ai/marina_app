@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -45,30 +46,42 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final culture = Localizations.localeOf(context).languageCode;
     final home = ref.watch(catalogHomeProvider(culture));
-    return ColoredBox(
-      color: Theme.of(context).scaffoldBackgroundColor,
-      child: SafeArea(
+    final authed = apiClient.isAuthenticated;
+    final cart = authed ? ref.watch(cartProvider) : const AsyncLoading();
+    final notifications = authed
+        ? ref.watch(customerNotificationsProvider)
+        : const AsyncLoading();
+    final bagCount =
+        cart.value?.items.fold<int>(0, (sum, line) => sum + line.quantity) ??
+            0;
+    final hasUnread =
+        notifications.value?.items.any((x) => x.readUtc == null) ?? false;
+
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.light,
+      child: ColoredBox(
+        color: Theme.of(context).scaffoldBackgroundColor,
+        child: SafeArea(
+        bottom: false,
         child: RefreshIndicator(
           onRefresh: () => ref.refresh(catalogHomeProvider(culture).future),
           child: CustomScrollView(
             slivers: [
               SliverToBoxAdapter(
                 child: Container(
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [MarinaColors.navy, MarinaColors.midnight],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
+                  decoration: BoxDecoration(
+                    gradient: MarinaGradients.header(
+                      dark: Theme.of(context).brightness == Brightness.dark,
                     ),
-                    borderRadius: BorderRadius.vertical(
-                      bottom: Radius.circular(32),
+                    borderRadius: const BorderRadius.vertical(
+                      bottom: Radius.circular(34),
                     ),
                   ),
                   child: Center(
                     child: ConstrainedBox(
                       constraints: const BoxConstraints(maxWidth: 1280),
                       child: Padding(
-                        padding: const EdgeInsets.fromLTRB(18, 16, 18, 26),
+                        padding: const EdgeInsets.fromLTRB(18, 14, 18, 26),
                         child: Column(
                           children: [
                             Row(
@@ -85,33 +98,47 @@ class HomeScreen extends ConsumerWidget {
                                     ),
                                   ),
                                 ),
-                                _HeaderAction(
+                                _ThemeToggleButton(),
+                                const SizedBox(width: 8),
+                                MarinaIconButton(
                                   icon: Icons.notifications_none_rounded,
+                                  dark: true,
+                                  dot: hasUnread,
                                   onTap: () => context.push('/notifications'),
                                 ),
-                                _HeaderAction(
+                                const SizedBox(width: 8),
+                                MarinaIconButton(
                                   icon: Icons.shopping_bag_outlined,
+                                  dark: true,
+                                  badgeCount: bagCount,
                                   onTap: () => context.push('/cart'),
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 28),
+                            const SizedBox(height: 24),
                             Material(
-                              color: Colors.white.withValues(alpha: .09),
-                              borderRadius: BorderRadius.circular(17),
+                              color: Colors.white.withValues(alpha: .07),
+                              borderRadius: BorderRadius.circular(19),
                               child: InkWell(
-                                borderRadius: BorderRadius.circular(17),
+                                borderRadius: BorderRadius.circular(19),
                                 onTap: () => context.push('/search'),
-                                child: Padding(
+                                child: Container(
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 16,
                                     vertical: 15,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(19),
+                                    border: Border.all(
+                                      color:
+                                          Colors.white.withValues(alpha: .12),
+                                    ),
                                   ),
                                   child: Row(
                                     children: [
                                       const Icon(
                                         Icons.search_rounded,
-                                        color: Color(0xFF8CB6DF),
+                                        color: MarinaColors.goldBright,
                                       ),
                                       const SizedBox(width: 11),
                                       Expanded(
@@ -142,7 +169,7 @@ class HomeScreen extends ConsumerWidget {
                 ),
                 sliver: SliverList(
                   delegate: SliverChildListDelegate([
-                    const SizedBox(height: 18),
+                    const SizedBox(height: 20),
                     home.when(
                       loading: () =>
                           const SizedBox(height: 520, child: LoadingState()),
@@ -158,14 +185,14 @@ class HomeScreen extends ConsumerWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           _Hero(data: data),
-                          const SizedBox(height: 28),
+                          const SizedBox(height: 30),
                           SectionHeading(
                             title: context.tr('categories'),
                             route: '/categories',
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 14),
                           SizedBox(
-                            height: 98,
+                            height: 102,
                             child: ListView.separated(
                               scrollDirection: Axis.horizontal,
                               itemCount: data.categories.length,
@@ -183,7 +210,7 @@ class HomeScreen extends ConsumerWidget {
                               },
                             ),
                           ),
-                          const SizedBox(height: 26),
+                          const SizedBox(height: 28),
                           _ProductRail(
                             title: context.tr('new'),
                             route: '/new-arrivals',
@@ -197,21 +224,17 @@ class HomeScreen extends ConsumerWidget {
                           ),
                           const SizedBox(height: 28),
                           _ProductRail(
-                            title: culture == 'ar'
-                                ? 'الأكثر مبيعاً'
-                                : 'Best sellers',
+                            title: context.tr('bestSellers'),
                             route: '/products',
                             items: data.products.skip(2).toList(),
                           ),
                           const SizedBox(height: 28),
                           _ProductRail(
-                            title: culture == 'ar'
-                                ? 'مختارات لك'
-                                : 'Recommended',
+                            title: context.tr('recommended'),
                             route: '/products',
                             items: data.products.skip(4).toList(),
                           ),
-                          const SizedBox(height: 34),
+                          const SizedBox(height: 122),
                         ],
                       ),
                     ),
@@ -221,6 +244,7 @@ class HomeScreen extends ConsumerWidget {
             ],
           ),
         ),
+      ),
       ),
     );
   }
@@ -232,22 +256,45 @@ double _pagePadding(double width) => width >= 1200
     ? 32
     : 16;
 
-class _HeaderAction extends StatelessWidget {
-  const _HeaderAction({required this.icon, required this.onTap});
-  final IconData icon;
-  final VoidCallback onTap;
+/// Day / night switch for the home header.
+class _ThemeToggleButton extends ConsumerWidget {
   @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsetsDirectional.only(start: 8),
-    child: IconButton.filledTonal(
-      onPressed: onTap,
-      style: IconButton.styleFrom(
-        backgroundColor: Colors.white.withValues(alpha: .09),
-        foregroundColor: Colors.white,
+  Widget build(BuildContext context, WidgetRef ref) {
+    final mode = ref.watch(themeModeProvider);
+    final platformDark =
+        MediaQuery.platformBrightnessOf(context) == Brightness.dark;
+    final effectiveDark =
+        mode == ThemeMode.dark || (mode == ThemeMode.system && platformDark);
+    return GestureDetector(
+      onTap: () => ref
+          .read(themeModeProvider.notifier)
+          .set(effectiveDark ? ThemeMode.light : ThemeMode.dark),
+      child: Container(
+        width: 42,
+        height: 42,
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: .08),
+          shape: BoxShape.circle,
+          border: Border.all(color: Colors.white.withValues(alpha: .16)),
+        ),
+        child: AnimatedSwitcher(
+          duration: MarinaMotion.normal,
+          transitionBuilder: (child, animation) => RotationTransition(
+            turns: Tween(begin: .75, end: 1.0).animate(animation),
+            child: FadeTransition(opacity: animation, child: child),
+          ),
+          child: Icon(
+            key: ValueKey(effectiveDark),
+            effectiveDark
+                ? Icons.light_mode_rounded
+                : Icons.dark_mode_rounded,
+            size: 19,
+            color: MarinaColors.goldBright,
+          ),
+        ),
       ),
-      icon: Icon(icon, size: 21),
-    ),
-  );
+    );
+  }
 }
 
 class _CategoryChip extends StatelessWidget {
@@ -256,9 +303,11 @@ class _CategoryChip extends StatelessWidget {
     required this.onTap,
     required this.index,
   });
+
   final String label;
   final VoidCallback onTap;
   final int index;
+
   @override
   Widget build(BuildContext context) {
     const icons = [
@@ -268,42 +317,48 @@ class _CategoryChip extends StatelessWidget {
       Icons.watch_outlined,
       Icons.child_friendly_outlined,
     ];
+    final p = MarinaPalette.of(context);
     return Material(
       color: Colors.transparent,
       child: SizedBox(
-        width: 76,
+        width: 78,
         child: InkWell(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(20),
           onTap: onTap,
           child: Column(
             children: [
               Container(
-                width: 58,
-                height: 58,
+                width: 60,
+                height: 60,
                 decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(19),
-                  boxShadow: [
-                    BoxShadow(
-                      color: MarinaColors.navy.withValues(alpha: .06),
-                      blurRadius: 16,
-                    ),
-                  ],
+                  color: p.isDark ? p.surfaceSoft : Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: p.gold.withValues(alpha: .28)),
+                  boxShadow: p.isDark
+                      ? null
+                      : [
+                          BoxShadow(
+                            color: MarinaColors.navy.withValues(alpha: .07),
+                            blurRadius: 16,
+                            offset: const Offset(0, 8),
+                          ),
+                        ],
                 ),
                 child: Icon(
                   icons[index % icons.length],
-                  color: MarinaColors.royal,
+                  color: p.isDark ? p.gold : MarinaColors.navy,
                   size: 25,
                 ),
               ),
-              const SizedBox(height: 7),
+              const SizedBox(height: 8),
               Text(
                 label,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 11.5,
                   fontWeight: FontWeight.w600,
+                  color: p.ink,
                 ),
               ),
             ],
@@ -320,25 +375,27 @@ class _ProductRail extends StatelessWidget {
     required this.route,
     required this.items,
   });
+
   final String title, route;
   final List<Product> items;
+
   @override
   Widget build(BuildContext context) => Column(
     children: [
       SectionHeading(title: title, route: route),
-      const SizedBox(height: 12),
+      const SizedBox(height: 14),
       if (items.isEmpty)
         const SizedBox(height: 180, child: EmptyState())
       else
         LayoutBuilder(
           builder: (context, c) {
             final cardWidth = c.maxWidth >= 1000
-                ? 210.0
+                ? 216.0
                 : c.maxWidth >= 600
-                ? 190.0
-                : 164.0;
+                ? 194.0
+                : 166.0;
             return SizedBox(
-              height: 285,
+              height: 300,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 itemCount: items.take(12).length,
@@ -357,6 +414,7 @@ class _ProductRail extends StatelessWidget {
 
 class _Hero extends StatelessWidget {
   const _Hero({required this.data});
+
   final CatalogHome data;
 
   @override
@@ -365,15 +423,16 @@ class _Hero extends StatelessWidget {
       builder: (context, c) {
         final desktop = c.maxWidth >= 700;
         return Container(
-          height: desktop ? 360 : 300,
+          height: desktop ? 370 : 310,
           decoration: BoxDecoration(
             color: MarinaColors.midnight,
-            borderRadius: BorderRadius.circular(28),
+            borderRadius: BorderRadius.circular(30),
+            border: Border.all(color: MarinaColors.gold.withValues(alpha: .25)),
             boxShadow: [
               BoxShadow(
-                color: MarinaColors.deepRoyal.withValues(alpha: .18),
-                blurRadius: 30,
-                offset: const Offset(0, 14),
+                color: MarinaColors.midnight.withValues(alpha: .35),
+                blurRadius: 34,
+                offset: const Offset(0, 16),
               ),
             ],
           ),
@@ -394,15 +453,15 @@ class _Hero extends StatelessWidget {
                       begin: AlignmentDirectional.centerStart,
                       end: AlignmentDirectional.centerEnd,
                       colors: desktop
-                          ? [
-                              MarinaColors.navy,
-                              MarinaColors.navy.withValues(alpha: .88),
-                              Colors.transparent,
+                          ? const [
+                              Color(0xFF0A111E),
+                              Color(0xE10A111E),
+                              Color(0x330A111E),
                             ]
-                          : [
-                              MarinaColors.navy.withValues(alpha: .97),
-                              MarinaColors.navy.withValues(alpha: .55),
-                              MarinaColors.navy.withValues(alpha: .18),
+                          : const [
+                              Color(0xF70A111E),
+                              Color(0x8C0A111E),
+                              Color(0x2E0A111E),
                             ],
                     ),
                   ),
@@ -417,18 +476,26 @@ class _Hero extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(width: 34, height: 3, color: MarinaColors.royal),
-                    const SizedBox(height: 15),
+                    Text(
+                      'MARINA',
+                      style: TextStyle(
+                        color: MarinaColors.goldBright,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing:
+                            MarinaType.isArabic(context) ? 0 : 4.5,
+                        height: 1.2,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
                     Text(
                       data.title,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
+                      style: MarinaType.display(
+                        context,
+                        size: desktop ? 36 : 28,
                         color: Colors.white,
-                        fontSize: desktop ? 36 : 29,
-                        height: 1.08,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -.7,
                       ),
                     ),
                     if (data.subtitle.isNotEmpty) ...[
@@ -444,11 +511,12 @@ class _Hero extends StatelessWidget {
                         ),
                       ),
                     ],
-                    const SizedBox(height: 18),
-                    FilledButton.icon(
+                    const SizedBox(height: 22),
+                    MarinaGoldButton(
+                      label: context.tr('shop'),
+                      icon: Icons.arrow_outward_rounded,
+                      height: 50,
                       onPressed: () => context.push('/products'),
-                      icon: const Icon(Icons.arrow_forward_rounded, size: 18),
-                      label: Text(context.tr('shop')),
                     ),
                   ],
                 ),
@@ -463,32 +531,51 @@ class _Hero extends StatelessWidget {
 
 class SectionHeading extends StatelessWidget {
   const SectionHeading({super.key, required this.title, required this.route});
+
   final String title, route;
+
   @override
-  Widget build(BuildContext context) => Row(
-    children: [
-      Expanded(
-        child: Text(
-          title,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: Theme.of(context).textTheme.titleLarge,
+  Widget build(BuildContext context) {
+    final p = MarinaPalette.of(context);
+    final rtl = Directionality.of(context) == TextDirection.rtl;
+    return Row(
+      children: [
+        Container(
+          width: 3.5,
+          height: 18,
+          margin: const EdgeInsetsDirectional.only(end: 10),
+          decoration: BoxDecoration(
+            gradient: MarinaGradients.gold,
+            borderRadius: BorderRadius.circular(3),
+          ),
         ),
-      ),
-      TextButton(
-        style: TextButton.styleFrom(
-          visualDensity: VisualDensity.compact,
-          padding: const EdgeInsets.symmetric(horizontal: 8),
+        Expanded(
+          child: Text(
+            title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
         ),
-        onPressed: () => context.push(route),
-        child: Text(
-          context.tr('viewAll'),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
+        TextButton.icon(
+          style: TextButton.styleFrom(
+            visualDensity: VisualDensity.compact,
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+          ),
+          onPressed: () => context.push(route),
+          icon: Text(
+            context.tr('viewAll'),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          label: Icon(
+            rtl ? Icons.arrow_back_rounded : Icons.arrow_forward_rounded,
+            size: 15,
+          ),
         ),
-      ),
-    ],
-  );
+      ],
+    );
+  }
 }
 
 class CatalogScreen extends ConsumerStatefulWidget {
@@ -501,6 +588,7 @@ class CatalogScreen extends ConsumerStatefulWidget {
     this.offers = false,
     this.newArrivals = false,
   });
+
   final String titleKey;
   final String? search, categoryId, brandId;
   final bool offers, newArrivals;
@@ -541,7 +629,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
       actions: [
         PopupMenuButton<String>(
           initialValue: sort,
-          icon: const Icon(Icons.sort),
+          icon: const Icon(Icons.sort_rounded),
           onSelected: (value) => setState(() => sort = value),
           itemBuilder: (_) => [
             PopupMenuItem(value: 'newest', child: Text(context.tr('newest'))),
@@ -566,25 +654,36 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                 size != null ||
                 minPrice != null ||
                 maxPrice != null,
-            child: const Icon(Icons.tune),
+            child: const Icon(Icons.tune_rounded),
           ),
         ),
+        const SizedBox(width: 4),
       ],
       child: data.when(
         data: (items) => items.isEmpty
             ? const EmptyState(icon: Icons.search_off)
             : RefreshIndicator(
                 onRefresh: () => ref.refresh(productListProvider(query).future),
-                child: GridView.builder(
-                  padding: const EdgeInsets.all(18),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    childAspectRatio: .62,
-                    crossAxisSpacing: 14,
-                    mainAxisSpacing: 20,
-                  ),
-                  itemCount: items.length,
-                  itemBuilder: (_, i) => ProductCard(product: items[i]),
+                child: LayoutBuilder(
+                  builder: (context, c) {
+                    final columns = c.maxWidth >= 1000
+                        ? 4
+                        : c.maxWidth >= 620
+                        ? 3
+                        : 2;
+                    return GridView.builder(
+                      padding: const EdgeInsets.all(18),
+                      gridDelegate:
+                          SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: columns,
+                        childAspectRatio: columns == 2 ? .62 : .58,
+                        crossAxisSpacing: 14,
+                        mainAxisSpacing: 18,
+                      ),
+                      itemCount: items.length,
+                      itemBuilder: (_, i) => ProductCard(product: items[i]),
+                    );
+                  },
                 ),
               ),
         loading: () => const LoadingState(),
@@ -598,6 +697,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
 
   Future<void> _showFilters() async {
     final culture = Localizations.localeOf(context).languageCode;
+    final p = MarinaPalette.of(context);
     CatalogFilters options;
     try {
       options = await ref.read(catalogFiltersProvider(culture).future);
@@ -624,7 +724,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
         builder: (context, update) => Padding(
           padding: EdgeInsets.fromLTRB(
             24,
-            24,
+            8,
             24,
             MediaQuery.viewInsetsOf(context).bottom + 24,
           ),
@@ -635,8 +735,14 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
               children: [
                 Text(
                   context.tr('filters'),
-                  style: Theme.of(context).textTheme.headlineSmall,
+                  style: MarinaType.display(context, size: 22),
                 ),
+                const SizedBox(height: 4),
+                Text(
+                  context.tr('sortFilter'),
+                  style: TextStyle(color: p.muted, fontSize: 13),
+                ),
+                const SizedBox(height: 18),
                 DropdownButtonFormField<String?>(
                   initialValue: selectedBrand,
                   decoration: InputDecoration(labelText: context.tr('brands')),
@@ -651,6 +757,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                   ],
                   onChanged: (value) => selectedBrand = value,
                 ),
+                const SizedBox(height: 14),
                 DropdownButtonFormField<String?>(
                   initialValue: selectedColor,
                   decoration: InputDecoration(labelText: context.tr('colors')),
@@ -666,6 +773,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                   ],
                   onChanged: (value) => selectedColor = value,
                 ),
+                const SizedBox(height: 14),
                 DropdownButtonFormField<String?>(
                   initialValue: selectedSize,
                   decoration: InputDecoration(labelText: context.tr('sizes')),
@@ -681,6 +789,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                   ],
                   onChanged: (value) => selectedSize = value,
                 ),
+                const SizedBox(height: 14),
                 Row(
                   children: [
                     Expanded(
@@ -708,7 +817,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 18),
+                const SizedBox(height: 22),
                 Row(
                   children: [
                     TextButton(
@@ -723,9 +832,13 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                       child: Text(context.tr('clearFilters')),
                     ),
                     const Spacer(),
-                    FilledButton(
-                      onPressed: () => context.pop(true),
-                      child: Text(context.tr('apply')),
+                    Expanded(
+                      flex: 2,
+                      child: MarinaGoldButton(
+                        label: context.tr('apply'),
+                        height: 50,
+                        onPressed: () => context.pop(true),
+                      ),
                     ),
                   ],
                 ),
@@ -768,20 +881,74 @@ class BrandsScreen extends ConsumerWidget {
             ? const EmptyState(icon: Icons.storefront_outlined)
             : RefreshIndicator(
                 onRefresh: () => ref.refresh(brandsProvider(culture).future),
-                child: ListView.separated(
+                child: GridView.builder(
                   padding: const EdgeInsets.all(18),
-                  itemCount: items.length,
-                  separatorBuilder: (_, _) => const Divider(),
-                  itemBuilder: (_, index) => ListTile(
-                    leading: const CircleAvatar(
-                      backgroundColor: MarinaTheme.sand,
-                      child: Icon(Icons.storefront_outlined),
-                    ),
-                    title: Text(items[index].name),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () =>
-                        context.push('/products?brand=${items[index].id}'),
+                  gridDelegate:
+                      const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    mainAxisSpacing: 12,
+                    crossAxisSpacing: 12,
+                    childAspectRatio: 2.9,
                   ),
+                  itemCount: items.length,
+                  itemBuilder: (_, index) {
+                    final brand = items[index];
+                    return Material(
+                      color: Theme.of(context).colorScheme.surface,
+                      borderRadius: BorderRadius.circular(18),
+                      clipBehavior: Clip.antiAlias,
+                      child: InkWell(
+                        onTap: () =>
+                            context.push('/products?brand=${brand.id}'),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(18),
+                            border: Border.all(
+                              color: MarinaPalette.of(context)
+                                  .line
+                                  .withValues(alpha: .9),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 34,
+                                height: 34,
+                                decoration: BoxDecoration(
+                                  color: MarinaPalette.of(context).goldSoft,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  Icons.storefront_outlined,
+                                  size: 17,
+                                  color: MarinaPalette.of(context).gold,
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  brand.name,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 13.5,
+                                    color: MarinaPalette.of(context).ink,
+                                  ),
+                                ),
+                              ),
+                              Icon(
+                                Icons.chevron_right_rounded,
+                                size: 18,
+                                color: MarinaPalette.of(context).muted,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ),
       ),
@@ -809,24 +976,74 @@ class CategoriesScreen extends ConsumerWidget {
                 onRefresh: () =>
                     ref.refresh(categoriesProvider(culture).future),
                 child: ListView.separated(
-                  padding: const EdgeInsets.all(18),
+                  padding: const EdgeInsets.fromLTRB(18, 18, 18, 122),
                   itemCount: items.length,
-                  separatorBuilder: (_, _) => const Divider(),
-                  itemBuilder: (_, i) => ListTile(
-                    contentPadding: const EdgeInsets.symmetric(vertical: 8),
-                    leading: const CircleAvatar(
-                      radius: 28,
-                      backgroundColor: MarinaTheme.sand,
-                      child: Icon(Icons.checkroom),
-                    ),
-                    title: Text(
-                      items[i].name,
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () =>
-                        context.push('/products?category=${items[i].id}'),
-                  ),
+                  separatorBuilder: (_, _) => const SizedBox(height: 12),
+                  itemBuilder: (_, i) {
+                    const icons = [
+                      Icons.checkroom_rounded,
+                      Icons.dry_cleaning_rounded,
+                      Icons.hiking_rounded,
+                      Icons.watch_rounded,
+                      Icons.child_friendly_rounded,
+                    ];
+                    final p = MarinaPalette.of(context);
+                    return Material(
+                      color: p.surface,
+                      borderRadius: BorderRadius.circular(20),
+                      clipBehavior: Clip.antiAlias,
+                      child: InkWell(
+                        onTap: () =>
+                            context.push('/products?category=${items[i].id}'),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 14,
+                          ),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: p.line.withValues(alpha: .9),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 50,
+                                height: 50,
+                                decoration: BoxDecoration(
+                                  color: p.goldSoft,
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(
+                                    color: p.gold.withValues(alpha: .25),
+                                  ),
+                                ),
+                                child: Icon(
+                                  icons[i % icons.length],
+                                  color: p.gold,
+                                  size: 24,
+                                ),
+                              ),
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Text(
+                                  items[i].name,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleMedium
+                                      ?.copyWith(fontSize: 16),
+                                ),
+                              ),
+                              Icon(
+                                Icons.chevron_right_rounded,
+                                color: p.muted.withValues(alpha: .7),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ),
       ),
@@ -836,36 +1053,52 @@ class CategoriesScreen extends ConsumerWidget {
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
+
   @override
   State<SearchScreen> createState() => _SearchState();
 }
 
 class _SearchState extends State<SearchScreen> {
   String query = '';
+
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(
-      title: TextField(
-        autofocus: true,
-        textInputAction: TextInputAction.search,
-        onSubmitted: (value) => setState(() => query = value.trim()),
-        decoration: InputDecoration(
-          hintText: context.tr('search'),
-          prefixIcon: const Icon(Icons.search),
+  Widget build(BuildContext context) {
+    final p = MarinaPalette.of(context);
+    return Scaffold(
+      backgroundColor: p.background,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        scrolledUnderElevation: 0,
+        titleSpacing: 16,
+        title: TextField(
+          autofocus: true,
+          textInputAction: TextInputAction.search,
+          onSubmitted: (value) => setState(() => query = value.trim()),
+          decoration: InputDecoration(
+            hintText: context.tr('search'),
+            prefixIcon: const Icon(Icons.search_rounded),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(19),
+              borderSide: BorderSide.none,
+            ),
+            filled: true,
+            fillColor: p.surface,
+          ),
         ),
       ),
-    ),
-    body: query.isEmpty
-        ? EmptyState(
-            icon: Icons.manage_search,
-            message: context.tr('searchPrompt'),
-          )
-        : CatalogScreen(titleKey: 'search', search: query),
-  );
+      body: query.isEmpty
+          ? EmptyState(
+              icon: Icons.manage_search_rounded,
+              message: context.tr('searchPrompt'),
+            )
+          : CatalogScreen(titleKey: 'search', search: query),
+    );
+  }
 }
 
 class ProductDetailScreen extends ConsumerStatefulWidget {
   const ProductDetailScreen({super.key, required this.id, this.product});
+
   final String id;
   final Product? product;
 
@@ -899,9 +1132,11 @@ class _DetailState extends ConsumerState<ProductDetailScreen> {
         final selected =
             available.where((x) => x.id == selectedVariantId).firstOrNull ??
             available.firstOrNull;
+        final p = MarinaPalette.of(context);
         return Scaffold(
-          backgroundColor: MarinaColors.nearWhite,
+          backgroundColor: p.background,
           body: SafeArea(
+            bottom: false,
             child: Center(
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 980),
@@ -911,19 +1146,28 @@ class _DetailState extends ConsumerState<ProductDetailScreen> {
                       child: ListView(
                         padding: const EdgeInsets.fromLTRB(16, 10, 16, 24),
                         children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          Stack(
                             children: [
-                              IconButton(
-                                onPressed: () => context.pop(),
-                                icon: const Icon(Icons.arrow_back),
+                              _ProductGallery(images: product.images),
+                              PositionedDirectional(
+                                top: 10,
+                                start: 10,
+                                child: MarinaIconButton(
+                                  icon: Icons.arrow_back_ios_new_rounded,
+                                  dark: true,
+                                  onTap: () => context.pop(),
+                                ),
                               ),
-                              _FavoriteButton(productId: product.id),
+                              PositionedDirectional(
+                                top: 10,
+                                end: 10,
+                                child: _FavoriteButton(productId: product.id),
+                              ),
                             ],
                           ),
-                          _ProductGallery(images: product.images),
-                          const SizedBox(height: 18),
+                          const SizedBox(height: 20),
                           MarinaSectionCard(
+                            padding: const EdgeInsets.all(20),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -934,61 +1178,100 @@ class _DetailState extends ConsumerState<ProductDetailScreen> {
                                       .headlineMedium,
                                 ),
                                 if (selected != null) ...[
-                                  const SizedBox(height: 8),
-                                  MarinaPrice(
-                                    value: selected.price,
-                                    large: true,
+                                  const SizedBox(height: 10),
+                                  Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.baseline,
+                                    textBaseline: TextBaseline.alphabetic,
+                                    children: [
+                                      MarinaPrice(
+                                        value: selected.price,
+                                        large: true,
+                                      ),
+                                      if (selected.compareAtPrice != null &&
+                                          selected.compareAtPrice! >
+                                              selected.price) ...[
+                                        const SizedBox(width: 10),
+                                        Text(
+                                          'SAR ${selected.compareAtPrice!.toStringAsFixed(2)}',
+                                          style: TextStyle(
+                                            color: p.muted,
+                                            fontSize: 14,
+                                            decoration:
+                                                TextDecoration.lineThrough,
+                                          ),
+                                        ),
+                                      ],
+                                    ],
                                   ),
                                 ],
                                 if (product.description.isNotEmpty) ...[
-                                  const SizedBox(height: 12),
+                                  const SizedBox(height: 14),
                                   Text(
                                     product.description,
-                                    style: const TextStyle(
-                                      height: 1.55,
-                                      color: MarinaColors.muted,
+                                    style: TextStyle(
+                                      height: 1.6,
+                                      fontSize: 14,
+                                      color: p.muted,
                                     ),
                                   ),
                                 ],
                                 const SizedBox(height: 22),
                                 Text(
-                                  context.tr('chooseVariant'),
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w700,
-                                    color: MarinaColors.navy,
-                                  ),
+                                  context.tr('chooseVariant').toUpperCase(),
+                                  style: MarinaType.kicker(context),
                                 ),
-                                const SizedBox(height: 10),
+                                const SizedBox(height: 12),
                                 if (product.variants.isEmpty)
                                   Text(context.tr('outOfStock'))
                                 else
                                   Wrap(
                                     spacing: 8,
                                     runSpacing: 8,
-                                    children: product.variants.map((variant) {
-                                      final label =
-                                          [variant.color, variant.size]
-                                              .whereType<String>()
-                                              .where((x) => x.isNotEmpty)
-                                              .join(' • ');
+                                    children:
+                                        product.variants.map((variant) {
+                                      final colorHex = int.tryParse(
+                                        'FF${variant.colorHex?.replaceAll('#', '') ?? ''}',
+                                        radix: 16,
+                                      );
+                                      final swatch = (colorHex != null &&
+                                              variant.colorHex?.isNotEmpty ==
+                                                  true)
+                                          ? Color(colorHex)
+                                          : null;
+                                      final label = [
+                                        variant.color,
+                                        variant.size,
+                                      ]
+                                          .whereType<String>()
+                                          .where((x) => x.isNotEmpty)
+                                          .join(' • ');
+                                      final isSelected =
+                                          selected?.id == variant.id;
                                       return ChoiceChip(
-                                        label: Text(
-                                          label.isEmpty ? variant.sku : label,
+                                        label: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            if (swatch != null) ...[
+                                              Container(
+                                                width: 13,
+                                                height: 13,
+                                                decoration: BoxDecoration(
+                                                  color: swatch,
+                                                  shape: BoxShape.circle,
+                                                  border: Border.all(
+                                                    color: p.line,
+                                                  ),
+                                                ),
+                                              ),
+                                              const SizedBox(width: 7),
+                                            ],
+                                            Text(label.isEmpty
+                                                ? variant.sku
+                                                : label),
+                                          ],
                                         ),
-                                        selected: selected?.id == variant.id,
-                                        selectedColor: MarinaColors.royal,
-                                        backgroundColor: MarinaColors.nearWhite,
-                                        labelStyle: TextStyle(
-                                          color: selected?.id == variant.id
-                                              ? Colors.white
-                                              : MarinaColors.navy,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                        side: BorderSide(
-                                          color: selected?.id == variant.id
-                                              ? MarinaColors.royal
-                                              : MarinaColors.line,
-                                        ),
+                                        selected: isSelected,
                                         onSelected: variant.available
                                             ? (_) => setState(
                                                 () => selectedVariantId =
@@ -996,6 +1279,11 @@ class _DetailState extends ConsumerState<ProductDetailScreen> {
                                               )
                                             : null,
                                         showCheckmark: false,
+                                        labelPadding:
+                                            const EdgeInsetsDirectional.only(
+                                          start: 12,
+                                          end: 14,
+                                        ),
                                       );
                                     }).toList(),
                                   ),
@@ -1016,57 +1304,73 @@ class _DetailState extends ConsumerState<ProductDetailScreen> {
                       ),
                     ),
                     Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
-                        border: Border(
-                          top: BorderSide(color: MarinaTheme.line),
-                        ),
+                      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+                      decoration: BoxDecoration(
+                        color: p.surface,
+                        border: Border(top: BorderSide(color: p.line)),
                       ),
-                      child: FilledButton(
-                        onPressed: selected == null || adding
-                            ? null
-                            : () async {
-                                if (!await apiClient.hasSession()) {
-                                  if (context.mounted) context.push('/login');
-                                  return;
-                                }
-                                setState(() => adding = true);
-                                try {
-                                  await ref
-                                      .read(cartProvider.notifier)
-                                      .add(selected.id);
-                                  if (context.mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(context.tr('addToBag')),
-                                      ),
-                                    );
+                      child: SafeArea(
+                        top: false,
+                        child: Row(
+                          children: [
+                            if (selected != null) ...[
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  MarinaPrice(value: selected.price, large: true),
+                                ],
+                              ),
+                              const SizedBox(width: 16),
+                            ],
+                            Expanded(
+                              child: MarinaGoldButton(
+                                label: selected == null
+                                    ? context.tr('outOfStock')
+                                    : context.tr('addToBag'),
+                                icon: Icons.add_shopping_cart_rounded,
+                                busy: adding,
+                                onPressed:
+                                    selected == null || adding ? null : () async {
+                                  if (!await apiClient.hasSession()) {
+                                    if (context.mounted) context.push('/login');
+                                    return;
                                   }
-                                } catch (error) {
-                                  if (context.mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          apiFailureMessage(
-                                            error,
-                                            context.tr('retry'),
+                                  setState(() => adding = true);
+                                  try {
+                                    await ref
+                                        .read(cartProvider.notifier)
+                                        .add(selected.id);
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        SnackBar(
+                                          content:
+                                              Text(context.tr('addToBag')),
+                                        ),
+                                      );
+                                    }
+                                  } catch (error) {
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            apiFailureMessage(
+                                              error,
+                                              context.tr('retry'),
+                                            ),
                                           ),
                                         ),
-                                      ),
-                                    );
+                                      );
+                                    }
+                                  } finally {
+                                    if (mounted) setState(() => adding = false);
                                   }
-                                } finally {
-                                  if (mounted) setState(() => adding = false);
-                                }
-                              },
-                        child: adding
-                            ? const CircularProgressIndicator()
-                            : Text(
-                                selected == null
-                                    ? context.tr('outOfStock')
-                                    : '${context.tr('addToBag')} • SAR ${selected.price.toStringAsFixed(2)}',
+                                },
                               ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ],
@@ -1082,7 +1386,9 @@ class _DetailState extends ConsumerState<ProductDetailScreen> {
 
 class _ProductGallery extends StatefulWidget {
   const _ProductGallery({required this.images});
+
   final List<String> images;
+
   @override
   State<_ProductGallery> createState() => _ProductGalleryState();
 }
@@ -1092,17 +1398,20 @@ class _ProductGalleryState extends State<_ProductGallery> {
 
   @override
   Widget build(BuildContext context) {
+    final p = MarinaPalette.of(context);
     if (widget.images.isEmpty) {
       return Container(
         height: 390,
+        alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: p.surface,
           borderRadius: BorderRadius.circular(28),
+          border: Border.all(color: p.line),
         ),
-        child: const Icon(
-          Icons.image_outlined,
+        child: Icon(
+          Icons.checkroom_rounded,
           size: 72,
-          color: MarinaColors.deepRoyal,
+          color: p.muted.withValues(alpha: .5),
         ),
       );
     }
@@ -1118,7 +1427,7 @@ class _ProductGalleryState extends State<_ProductGallery> {
               itemBuilder: (_, i) => ClipRRect(
                 borderRadius: BorderRadius.circular(28),
                 child: ColoredBox(
-                  color: Colors.white,
+                  color: p.isDark ? p.surfaceSoft : MarinaColors.sand,
                   child: MarinaNetworkImage(
                     url: widget.images[i],
                     fit: BoxFit.contain,
@@ -1135,8 +1444,11 @@ class _ProductGalleryState extends State<_ProductGallery> {
                     vertical: 7,
                   ),
                   decoration: BoxDecoration(
-                    color: MarinaColors.navy.withValues(alpha: .78),
+                    color: MarinaColors.midnight.withValues(alpha: .8),
                     borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: .14),
+                    ),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -1149,8 +1461,8 @@ class _ProductGalleryState extends State<_ProductGallery> {
                         margin: const EdgeInsets.symmetric(horizontal: 3),
                         decoration: BoxDecoration(
                           color: i == current
-                              ? MarinaColors.royal
-                              : Colors.white54,
+                              ? MarinaColors.goldBright
+                              : Colors.white38,
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
@@ -1167,22 +1479,26 @@ class _ProductGalleryState extends State<_ProductGallery> {
 
 class _FavoriteButton extends ConsumerWidget {
   const _FavoriteButton({required this.productId});
+
   final String productId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     if (!apiClient.isAuthenticated) {
-      return IconButton(
-        onPressed: () => context.push('/login'),
-        icon: const Icon(Icons.favorite_border),
+      return MarinaIconButton(
+        icon: Icons.favorite_border_rounded,
+        dark: true,
+        onTap: () => context.push('/login'),
       );
     }
     final culture = Localizations.localeOf(context).languageCode;
     final favorites = ref.watch(customerFavoritesProvider(culture));
     final saved = favorites.value?.any((x) => x.id == productId) ?? false;
-    return IconButton(
-      onPressed: favorites.isLoading
-          ? null
+    return MarinaIconButton(
+      icon: saved ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+      dark: true,
+      onTap: favorites.isLoading
+          ? () {}
           : () async {
               try {
                 final repository = ref.read(customerRepositoryProvider);
@@ -1204,13 +1520,13 @@ class _FavoriteButton extends ConsumerWidget {
                 }
               }
             },
-      icon: Icon(saved ? Icons.favorite : Icons.favorite_border),
     );
   }
 }
 
 class _RelatedProducts extends ConsumerWidget {
   const _RelatedProducts({required this.productId, required this.culture});
+
   final String productId, culture;
 
   @override
@@ -1226,20 +1542,35 @@ class _RelatedProducts extends ConsumerWidget {
           : Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: 22),
-                Text(
-                  context.tr('related'),
-                  style: Theme.of(context).textTheme.titleLarge,
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    Container(
+                      width: 3.5,
+                      height: 18,
+                      margin: const EdgeInsetsDirectional.only(end: 10),
+                      decoration: BoxDecoration(
+                        gradient: MarinaGradients.gold,
+                        borderRadius: BorderRadius.circular(3),
+                      ),
+                    ),
+                    Expanded(
+                      child: Text(
+                        context.tr('related'),
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 14),
                 SizedBox(
-                  height: 280,
+                  height: 296,
                   child: ListView.separated(
                     scrollDirection: Axis.horizontal,
                     itemCount: items.length,
                     separatorBuilder: (_, _) => const SizedBox(width: 12),
                     itemBuilder: (_, i) => SizedBox(
-                      width: 170,
+                      width: 176,
                       child: ProductCard(product: items[i]),
                     ),
                   ),
@@ -1252,8 +1583,10 @@ class _RelatedProducts extends ConsumerWidget {
 
 class GalleryScreen extends ConsumerWidget {
   const GalleryScreen({super.key, required this.productId, this.product});
+
   final String productId;
   final Product? product;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final culture = Localizations.localeOf(context).languageCode;

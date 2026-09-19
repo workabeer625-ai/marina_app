@@ -72,32 +72,112 @@ class AdminShell extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final wide = MediaQuery.sizeOf(context).width >= 900;
     final permissions = ref.watch(currentPermissionsProvider).value ?? const {};
+    final p = MarinaPalette.of(context);
+    final location = GoRouterState.of(context).uri.path;
     final nav = Material(
-      color: Colors.white.withValues(alpha: .55),
+      color: p.surface,
       child: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(18),
           child: Column(
             children: [
-              const MarinaWordmark(),
-              const SizedBox(height: 28),
+              MarinaWordmark(dark: !p.isDark),
+              const SizedBox(height: 6),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                child: Container(
+                  height: 1,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Colors.transparent,
+                        p.gold.withValues(alpha: .6),
+                        Colors.transparent,
+                      ],
+                    ),
+                  ),
+                ),
+              ),
               Expanded(
                 child: ListView(
                   children: [
                     for (final item in adminItems)
                       if (_hasPermission(permissions, item.$4))
-                        ListTile(
-                          dense: true,
-                          leading: Icon(item.$2),
-                          title: Text(context.tr(item.$1)),
-                          onTap: () => context.go(item.$3),
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 3),
+                          child: Material(
+                            color: location == item.$3
+                                ? p.goldSoft.withValues(
+                                    alpha: p.isDark ? .85 : .7,
+                                  )
+                                : Colors.transparent,
+                            borderRadius: BorderRadius.circular(14),
+                            clipBehavior: Clip.antiAlias,
+                            child: InkWell(
+                              onTap: () => context.go(item.$3),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 10,
+                                ),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(14),
+                                  border: Border.all(
+                                    color: location == item.$3
+                                        ? p.gold.withValues(alpha: .5)
+                                        : Colors.transparent,
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      item.$2,
+                                      size: 19,
+                                      color: location == item.$3
+                                          ? p.gold
+                                          : p.muted,
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Text(
+                                        context.tr(item.$1),
+                                        style: TextStyle(
+                                          fontSize: 13.5,
+                                          fontWeight: location == item.$3
+                                              ? FontWeight.w800
+                                              : FontWeight.w600,
+                                          color: location == item.$3
+                                              ? p.ink
+                                              : p.muted,
+                                        ),
+                                      ),
+                                    ),
+                                    if (location == item.$3)
+                                      Container(
+                                        width: 6,
+                                        height: 6,
+                                        decoration: BoxDecoration(
+                                          color: p.gold,
+                                          shape: BoxShape.circle,
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
                         ),
                   ],
                 ),
               ),
               ListTile(
-                leading: const CircleAvatar(
-                  child: Icon(Icons.admin_panel_settings_outlined),
+                leading: CircleAvatar(
+                  backgroundColor: p.goldSoft,
+                  child: Icon(
+                    Icons.admin_panel_settings_outlined,
+                    size: 20,
+                    color: p.gold,
+                  ),
                 ),
                 title: Text(context.tr('administrator')),
                 subtitle: Text(context.tr('mfaProtectedSession')),
@@ -112,16 +192,24 @@ class AdminShell extends ConsumerWidget {
       return Scaffold(
         body: Row(
           children: [
-            SizedBox(width: 240, child: nav),
-            const VerticalDivider(width: 1),
+            SizedBox(width: 248, child: nav),
+            VerticalDivider(width: 1, color: p.line),
             Expanded(child: child),
           ],
         ),
       );
     }
     return Scaffold(
-      appBar: AppBar(title: const MarinaWordmark()),
-      drawer: Drawer(child: nav),
+      appBar: AppBar(
+        title: MarinaWordmark(dark: !p.isDark),
+        backgroundColor: p.surface,
+        scrolledUnderElevation: 0,
+      ),
+      drawer: Drawer(
+        backgroundColor: p.surface,
+        shape: const RoundedRectangleBorder(),
+        child: nav,
+      ),
       body: child,
     );
   }
@@ -223,9 +311,12 @@ class AdminDashboardScreen extends ConsumerWidget {
                 else
                   for (final order in recent)
                     ListTile(
-                      leading: const CircleAvatar(
-                        backgroundColor: MarinaTheme.sand,
-                        child: Icon(Icons.receipt_long),
+                      leading: CircleAvatar(
+                        backgroundColor: MarinaPalette.of(context).goldSoft,
+                        child: Icon(
+                          Icons.receipt_long,
+                          color: MarinaPalette.of(context).gold,
+                        ),
                       ),
                       title: Text((order['publicNumber'] ?? '').toString()),
                       subtitle: Text(_enumText(order['status'])),
@@ -251,39 +342,75 @@ class _MetricCard extends StatelessWidget {
   final String label, value;
   final IconData icon;
   @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(18),
-    decoration: BoxDecoration(
-      border: Border.all(color: MarinaTheme.line),
-      borderRadius: BorderRadius.circular(16),
-    ),
-    child: Row(
-      children: [
-        CircleAvatar(
-          backgroundColor: MarinaTheme.blue.withValues(alpha: .5),
-          child: Icon(icon),
-        ),
-        const SizedBox(width: 13),
-        Expanded(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                alignment: AlignmentDirectional.centerStart,
-                child: Text(
-                  value,
-                  style: Theme.of(context).textTheme.headlineMedium,
+  Widget build(BuildContext context) {
+    final p = MarinaPalette.of(context);
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: p.surface,
+        border: Border.all(color: p.line),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: p.isDark
+            ? const [
+                BoxShadow(
+                  color: Color(0x4D000000),
+                  blurRadius: 20,
+                  offset: Offset(0, 10),
                 ),
-              ),
-            ],
+              ]
+            : const [
+                BoxShadow(
+                  color: Color(0x0F141420),
+                  blurRadius: 20,
+                  offset: Offset(0, 10),
+                ),
+              ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: p.goldSoft,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: p.gold.withValues(alpha: .3)),
+            ),
+            child: Icon(icon, size: 21, color: p.gold),
           ),
-        ),
-      ],
-    ),
-  );
+          const SizedBox(width: 13),
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontSize: 13, color: p.muted),
+                ),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: AlignmentDirectional.centerStart,
+                  child: Text(
+                    value,
+                    style: TextStyle(
+                      fontSize: 21,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -.4,
+                      color: p.ink,
+                      fontFeatures: const [FontFeature.tabularFigures()],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class AdminLiveListScreen extends ConsumerStatefulWidget {
@@ -388,9 +515,13 @@ class _AdminLiveListState extends ConsumerState<AdminLiveListScreen> {
                           itemBuilder: (_, i) {
                             final item = items[i];
                             return ListTile(
-                              leading: const CircleAvatar(
-                                backgroundColor: MarinaTheme.sand,
-                                child: Icon(Icons.data_object),
+                              leading: CircleAvatar(
+                                backgroundColor:
+                                    MarinaPalette.of(context).goldSoft,
+                                child: Icon(
+                                  Icons.data_object,
+                                  color: MarinaPalette.of(context).gold,
+                                ),
                               ),
                               title: Text(_title(item)),
                               subtitle: Text(
@@ -2191,7 +2322,7 @@ class _AdminProductFormState extends ConsumerState<AdminProductFormScreen> {
             loading: () => const LinearProgressIndicator(),
             error: (_, _) => Text(
               context.tr('loadCategoriesFailed'),
-              style: const TextStyle(color: Colors.red),
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
             ),
             data: (items) => DropdownButtonFormField<String>(
               key: ValueKey(categoryId),
@@ -2304,7 +2435,7 @@ class _AdminProductFormState extends ConsumerState<AdminProductFormScreen> {
           if (error != null)
             Padding(
               padding: const EdgeInsets.only(bottom: 14),
-              child: Text(error!, style: const TextStyle(color: Colors.red)),
+              child: Text(error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
             ),
           FilledButton(
             onPressed: busy ? null : submit,
@@ -2622,7 +2753,7 @@ class _AdminCouponFormState extends ConsumerState<AdminCouponFormScreen> {
         if (error != null)
           Padding(
             padding: const EdgeInsets.only(top: 14),
-            child: Text(error!, style: const TextStyle(color: Colors.red)),
+            child: Text(error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
           ),
         const SizedBox(height: 20),
         FilledButton(
@@ -2765,7 +2896,7 @@ class _AdminNotificationsState extends ConsumerState<AdminNotificationsScreen> {
             ),
           ),
           if (error != null)
-            Text(error!, style: const TextStyle(color: Colors.red)),
+            Text(error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
           const SizedBox(height: 14),
           FilledButton.icon(
             onPressed: busy ? null : _send,

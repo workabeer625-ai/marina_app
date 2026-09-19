@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/localization/app_localizations.dart';
@@ -11,12 +12,14 @@ import '../../onboarding/presentation/onboarding_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
+
   @override
   State<SplashScreen> createState() => _SplashState();
 }
 
 class _SplashState extends State<SplashScreen> {
   bool networkFailure = false, maintenance = false;
+
   @override
   void initState() {
     super.initState();
@@ -25,8 +28,8 @@ class _SplashState extends State<SplashScreen> {
 
   Future<void> _restore() async {
     try {
-      final configuration = (await apiClient.dio.get('/app/configuration'))
-          .data;
+      final configuration =
+          (await apiClient.dio.get('/app/configuration')).data;
       final maintenanceEnabled =
           configuration is Map &&
           configuration.entries.any(
@@ -56,10 +59,12 @@ class _SplashState extends State<SplashScreen> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    backgroundColor: MarinaColors.navy,
+  Widget build(BuildContext context) => AnnotatedRegion<SystemUiOverlayStyle>(
+    value: SystemUiOverlayStyle.light,
+    child: Scaffold(
+    backgroundColor: MarinaColors.midnight,
     body: networkFailure
-        ? ErrorState(
+        ? _AuthErrorScaffold(
             message: context.tr('noInternet'),
             onRetry: () {
               setState(() => networkFailure = false);
@@ -67,7 +72,7 @@ class _SplashState extends State<SplashScreen> {
             },
           )
         : maintenance
-        ? ErrorState(
+        ? _AuthErrorScaffold(
             message: context.tr('maintenance'),
             onRetry: () {
               setState(() => maintenance = false);
@@ -75,6 +80,38 @@ class _SplashState extends State<SplashScreen> {
             },
           )
         : const _SplashVisual(),
+    ),
+  );
+}
+
+class _AuthErrorScaffold extends StatelessWidget {
+  const _AuthErrorScaffold({required this.message, required this.onRetry});
+
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) => Theme(
+    data: MarinaTheme.dark(),
+    child: Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: Colors.white),
+          ),
+          const SizedBox(height: 16),
+          MarinaGoldButton(
+            label: context.tr('retry'),
+            icon: Icons.refresh_rounded,
+            onPressed: onRetry,
+          ),
+        ],
+      ),
+    ),
   );
 }
 
@@ -95,25 +132,31 @@ class _SplashVisual extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Color(0x88020E20), Color(0x08020E20), Color(0xE8020E20)],
-            stops: [0, .58, 1],
+            colors: [
+              Color(0xAA070B12),
+              Color(0x14070B12),
+              Color(0xF0070B12),
+            ],
+            stops: [0, .55, 1],
           ),
         ),
       ),
       const SafeArea(
         child: Padding(
-          padding: EdgeInsets.fromLTRB(28, 56, 28, 42),
+          padding: EdgeInsets.fromLTRB(28, 56, 28, 46),
           child: Column(
             children: [
               MarinaWordmark(dark: false),
               Spacer(),
+              GoldDivider(width: 130),
+              SizedBox(height: 16),
               Text(
                 'BEYOND SHOPPING',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: MarinaColors.goldBright,
                   fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 4,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 5,
                 ),
               ),
             ],
@@ -126,76 +169,105 @@ class _SplashVisual extends StatelessWidget {
 
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
+
   @override
-  Widget build(BuildContext context) => Scaffold(
-    backgroundColor: MarinaColors.navy,
-    body: SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(24, 42, 24, 28),
-        child: Column(
-          children: [
-            const MarinaWordmark(dark: false),
-            const Spacer(),
-            Container(
-              width: 148,
-              height: 148,
-              padding: const EdgeInsets.all(43),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: const RadialGradient(
-                  colors: [Color(0xFF0E4880), MarinaColors.navy],
-                ),
-                border: Border.all(
-                  color: MarinaColors.royal.withValues(alpha: .45),
-                ),
-                boxShadow: MarinaShadows.glow,
-              ),
-              child: const MarinaWordmark(
-                dark: false,
-                compact: true,
-                markOnly: true,
-              ),
-            ),
-            const SizedBox(height: 32),
-            Text(
-              context.tr('welcome'),
-              style: Theme.of(context).textTheme.headlineLarge
-                  ?.copyWith(color: Colors.white),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              context.tr('welcomeSubtitle'),
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: Color(0xFFB7C9DB), height: 1.5),
-            ),
-            const Spacer(),
-            FilledButton(
-              onPressed: () => context.push('/login'),
-              style: FilledButton.styleFrom(
-                minimumSize: const Size.fromHeight(56),
-              ),
-              child: Text(context.tr('login')),
-            ),
-            const SizedBox(height: 10),
-            OutlinedButton(
-              onPressed: () => context.push('/register'),
-              style: OutlinedButton.styleFrom(
-                minimumSize: const Size.fromHeight(56),
-                foregroundColor: Colors.white,
-                side: const BorderSide(color: Color(0xFF37526F)),
-              ),
-              child: Text(context.tr('register')),
-            ),
-          ],
+  Widget build(BuildContext context) => AnnotatedRegion<SystemUiOverlayStyle>(
+    value: SystemUiOverlayStyle.light,
+    child: Scaffold(
+    backgroundColor: MarinaColors.midnight,
+    body: DecoratedBox(
+      decoration: const BoxDecoration(
+        gradient: RadialGradient(
+          center: Alignment(0, -.55),
+          radius: 1.2,
+          colors: [Color(0xFF182338), MarinaColors.midnight],
         ),
       ),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 42, 24, 28),
+          child: Column(
+            children: [
+              const MarinaWordmark(dark: false),
+              const Spacer(),
+              Container(
+                width: 158,
+                height: 158,
+                padding: const EdgeInsets.all(3),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: MarinaGradients.gold,
+                  boxShadow: MarinaShadows.glow,
+                ),
+                child: Container(
+                  padding: const EdgeInsets.all(40),
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: RadialGradient(
+                      colors: [MarinaColors.navySoft, MarinaColors.midnight],
+                    ),
+                  ),
+                  child: const MarinaWordmark(
+                    dark: false,
+                    compact: true,
+                    markOnly: true,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 36),
+              Text(
+                context.tr('welcome'),
+                style: MarinaType.display(context, size: 34, color: Colors.white),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              const GoldDivider(width: 120),
+              const SizedBox(height: 16),
+              Text(
+                context.tr('welcomeSubtitle'),
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Color(0xFFB7C9DB),
+                  height: 1.55,
+                  fontSize: 14.5,
+                ),
+              ),
+              const Spacer(),
+              MarinaGoldButton(
+                label: context.tr('login'),
+                height: 56,
+                onPressed: () => context.push('/login'),
+              ),
+              const SizedBox(height: 12),
+              OutlinedButton(
+                onPressed: () => context.push('/register'),
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size.fromHeight(56),
+                  foregroundColor: Colors.white,
+                  backgroundColor: Colors.white.withValues(alpha: .04),
+                  side: BorderSide(
+                    color: Colors.white.withValues(alpha: .22),
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                ),
+                child: Text(context.tr('register')),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ),
     ),
   );
 }
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key, this.sessionExpired = false});
+
   final bool sessionExpired;
+
   @override
   State<LoginScreen> createState() => _LoginState();
 }
@@ -330,11 +402,10 @@ class _LoginState extends State<LoginScreen> {
         onPressed: () => context.push('/forgot-password'),
         child: Text(context.tr('forgot')),
       ),
-      FilledButton(
+      MarinaGoldButton(
+        label: context.tr('login'),
+        busy: busy,
         onPressed: busy ? null : submit,
-        child: busy
-            ? const CircularProgressIndicator()
-            : Text(context.tr('login')),
       ),
       TextButton(
         onPressed: () => context.push('/register'),
@@ -346,6 +417,7 @@ class _LoginState extends State<LoginScreen> {
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
+
   @override
   State<RegisterScreen> createState() => _RegisterState();
 }
@@ -446,11 +518,10 @@ class _RegisterState extends State<RegisterScreen> {
       _PasswordStrength(value: password.text),
       if (error != null) _ErrorText(error!),
       const SizedBox(height: 20),
-      FilledButton(
+      MarinaGoldButton(
+        label: context.tr('register'),
+        busy: busy,
         onPressed: busy ? null : submit,
-        child: busy
-            ? const CircularProgressIndicator()
-            : Text(context.tr('register')),
       ),
     ],
   );
@@ -458,6 +529,7 @@ class _RegisterState extends State<RegisterScreen> {
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
+
   @override
   State<ForgotPasswordScreen> createState() => _ForgotPasswordState();
 }
@@ -496,7 +568,10 @@ class _ForgotPasswordState extends State<ForgotPasswordScreen> {
   Widget build(BuildContext context) => AuthForm(
     title: context.tr('forgotPassword'),
     children: [
-      Text(context.tr('forgotInstructions')),
+      Text(
+        context.tr('forgotInstructions'),
+        style: const TextStyle(color: Color(0xFFB7C9DB), height: 1.55),
+      ),
       const SizedBox(height: 18),
       TextField(
         controller: email,
@@ -507,14 +582,16 @@ class _ForgotPasswordState extends State<ForgotPasswordScreen> {
       if (sent)
         Padding(
           padding: const EdgeInsets.only(top: 14),
-          child: Text(context.tr('requestAccepted')),
+          child: Text(
+            context.tr('requestAccepted'),
+            style: const TextStyle(color: MarinaColors.goldBright),
+          ),
         ),
       const SizedBox(height: 20),
-      FilledButton(
+      MarinaGoldButton(
+        label: context.tr('sendInstructions'),
+        busy: busy,
         onPressed: busy ? null : submit,
-        child: busy
-            ? const CircularProgressIndicator()
-            : Text(context.tr('sendInstructions')),
       ),
       TextButton(
         onPressed: () => context.push(
@@ -528,7 +605,9 @@ class _ForgotPasswordState extends State<ForgotPasswordScreen> {
 
 class ResetPasswordScreen extends StatefulWidget {
   const ResetPasswordScreen({super.key, this.initialEmail, this.initialToken});
+
   final String? initialEmail, initialToken;
+
   @override
   State<ResetPasswordScreen> createState() => _ResetPasswordState();
 }
@@ -591,11 +670,10 @@ class _ResetPasswordState extends State<ResetPasswordScreen> {
       ),
       if (error != null) _ErrorText(error!),
       const SizedBox(height: 20),
-      FilledButton(
+      MarinaGoldButton(
+        label: context.tr('resetPassword'),
+        busy: busy,
         onPressed: busy ? null : submit,
-        child: busy
-            ? const CircularProgressIndicator()
-            : Text(context.tr('resetPassword')),
       ),
     ],
   );
@@ -603,7 +681,9 @@ class _ResetPasswordState extends State<ResetPasswordScreen> {
 
 class VerificationScreen extends StatefulWidget {
   const VerificationScreen({super.key, this.initialEmail, this.initialToken});
+
   final String? initialEmail, initialToken;
+
   @override
   State<VerificationScreen> createState() => _VerificationState();
 }
@@ -670,16 +750,16 @@ class _VerificationState extends State<VerificationScreen> {
       const SizedBox(height: 14),
       TextField(
         controller: token,
-        decoration: InputDecoration(labelText: context.tr('verificationToken')),
+        decoration:
+            InputDecoration(labelText: context.tr('verificationToken')),
         maxLines: 2,
       ),
       if (message != null) _ErrorText(message!, neutral: true),
       const SizedBox(height: 20),
-      FilledButton(
+      MarinaGoldButton(
+        label: context.tr('verify'),
+        busy: busy,
         onPressed: busy ? null : verify,
-        child: busy
-            ? const CircularProgressIndicator()
-            : Text(context.tr('verify')),
       ),
       TextButton(
         onPressed: busy ? null : resend,
@@ -691,6 +771,7 @@ class _VerificationState extends State<VerificationScreen> {
 
 class ChangePasswordScreen extends StatefulWidget {
   const ChangePasswordScreen({super.key});
+
   @override
   State<ChangePasswordScreen> createState() => _ChangePasswordState();
 }
@@ -732,7 +813,8 @@ class _ChangePasswordState extends State<ChangePasswordScreen> {
       TextField(
         controller: current,
         obscureText: true,
-        decoration: InputDecoration(labelText: context.tr('currentPassword')),
+        decoration:
+            InputDecoration(labelText: context.tr('currentPassword')),
       ),
       const SizedBox(height: 14),
       TextField(
@@ -742,11 +824,10 @@ class _ChangePasswordState extends State<ChangePasswordScreen> {
       ),
       if (error != null) _ErrorText(error!),
       const SizedBox(height: 20),
-      FilledButton(
+      MarinaGoldButton(
+        label: context.tr('changePassword'),
+        busy: busy,
         onPressed: busy ? null : submit,
-        child: busy
-            ? const CircularProgressIndicator()
-            : Text(context.tr('changePassword')),
       ),
     ],
   );
@@ -762,6 +843,7 @@ class MfaLoginScreen extends StatefulWidget {
     this.account,
     this.issuer,
   });
+
   final String email, password;
   final bool setupRequired;
   final String? sharedKey, account, issuer;
@@ -830,13 +912,19 @@ class _MfaLoginState extends State<MfaLoginScreen> {
     ),
     children: [
       if (widget.setupRequired) ...[
-        Text(context.tr('mfaSetupInstructions')),
+        Text(
+          context.tr('mfaSetupInstructions'),
+          style: const TextStyle(color: Color(0xFFB7C9DB), height: 1.55),
+        ),
         const SizedBox(height: 12),
         SelectableText(
           '${widget.issuer ?? 'MARINA'}:${widget.account ?? widget.email}\n${widget.sharedKey ?? ''}',
         ),
       ] else
-        Text(context.tr('mfaCodeInstructions')),
+        Text(
+          context.tr('mfaCodeInstructions'),
+          style: const TextStyle(color: Color(0xFFB7C9DB), height: 1.55),
+        ),
       const SizedBox(height: 18),
       TextField(
         controller: code,
@@ -846,11 +934,10 @@ class _MfaLoginState extends State<MfaLoginScreen> {
       ),
       if (error != null) _ErrorText(error!),
       const SizedBox(height: 20),
-      FilledButton(
+      MarinaGoldButton(
+        label: context.tr('verify'),
+        busy: busy,
         onPressed: busy ? null : submit,
-        child: busy
-            ? const CircularProgressIndicator()
-            : Text(context.tr('verify')),
       ),
     ],
   );
@@ -858,6 +945,7 @@ class _MfaLoginState extends State<MfaLoginScreen> {
 
 class _AuthModeSwitch extends StatelessWidget {
   const _AuthModeSwitch({required this.phoneMode, required this.onChanged});
+
   final bool phoneMode;
   final ValueChanged<bool> onChanged;
 
@@ -865,9 +953,9 @@ class _AuthModeSwitch extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.all(4),
     decoration: BoxDecoration(
-      color: MarinaColors.ocean,
-      borderRadius: BorderRadius.circular(14),
-      border: Border.all(color: MarinaColors.nightLine),
+      color: const Color(0xFF0D1420),
+      borderRadius: BorderRadius.circular(15),
+      border: Border.all(color: const Color(0xFF283042)),
     ),
     child: Row(
       children: [
@@ -880,24 +968,32 @@ class _AuthModeSwitch extends StatelessWidget {
   Widget _item(bool value, IconData icon, String label) => Expanded(
     child: InkWell(
       onTap: () => onChanged(value),
-      borderRadius: BorderRadius.circular(11),
+      borderRadius: BorderRadius.circular(12),
       child: AnimatedContainer(
         duration: MarinaMotion.fast,
         padding: const EdgeInsets.symmetric(vertical: 10),
         decoration: BoxDecoration(
-          color: phoneMode == value ? MarinaColors.royal : Colors.transparent,
-          borderRadius: BorderRadius.circular(11),
+          gradient: phoneMode == value ? MarinaGradients.gold : null,
+          borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 16, color: Colors.white),
+            Icon(
+              icon,
+              size: 16,
+              color: phoneMode == value
+                  ? MarinaColors.onGold
+                  : const Color(0xFF98A1B0),
+            ),
             const SizedBox(width: 7),
             Text(
               label,
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
+              style: TextStyle(
+                color: phoneMode == value
+                    ? MarinaColors.onGold
+                    : const Color(0xFF98A1B0),
+                fontWeight: FontWeight.w700,
               ),
             ),
           ],
@@ -909,6 +1005,7 @@ class _AuthModeSwitch extends StatelessWidget {
 
 class _PasswordStrength extends StatelessWidget {
   const _PasswordStrength({required this.value});
+
   final String value;
 
   @override
@@ -931,9 +1028,8 @@ class _PasswordStrength extends StatelessWidget {
                 height: 3,
                 margin: EdgeInsetsDirectional.only(end: index == 3 ? 0 : 5),
                 decoration: BoxDecoration(
-                  color: index < score
-                      ? MarinaColors.electric
-                      : MarinaColors.nightLine,
+                  gradient: index < score ? MarinaGradients.gold : null,
+                  color: index < score ? null : const Color(0xFF283042),
                   borderRadius: BorderRadius.circular(3),
                 ),
               ),
@@ -947,7 +1043,7 @@ class _PasswordStrength extends StatelessWidget {
               : score < 4
               ? 'Good'
               : 'Strong',
-          style: const TextStyle(color: Color(0xFFAABBD0), fontSize: 12),
+          style: const TextStyle(color: Color(0xFF98A1B0), fontSize: 12),
         ),
       ],
     );
@@ -956,80 +1052,103 @@ class _PasswordStrength extends StatelessWidget {
 
 class _ErrorText extends StatelessWidget {
   const _ErrorText(this.message, {this.neutral = false});
+
   final String message;
   final bool neutral;
+
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.only(top: 12),
     child: Text(
       message,
-      style: TextStyle(color: neutral ? MarinaTheme.ink : Colors.red),
+      style: TextStyle(
+        color: neutral ? const Color(0xFFD8DEE9) : const Color(0xFFE58877),
+        fontSize: 13,
+        height: 1.45,
+      ),
     ),
   );
 }
 
 class AuthForm extends StatelessWidget {
   const AuthForm({super.key, required this.title, required this.children});
+
   final String title;
   final List<Widget> children;
+
   @override
-  Widget build(BuildContext context) => Scaffold(
-    backgroundColor: MarinaColors.navy,
-    body: SafeArea(
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 540),
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(20, 24, 20, 30),
-            children: [
-              Row(
-                children: [
-                  IconButton(
-                    onPressed: () => context.canPop()
-                        ? context.pop()
-                        : context.go('/welcome'),
-                    style: IconButton.styleFrom(foregroundColor: Colors.white),
-                    icon: const Icon(Icons.arrow_back_rounded),
-                  ),
-                  const Spacer(),
-                  const MarinaWordmark(dark: false, compact: true),
-                  const Spacer(),
-                  const SizedBox(width: 48),
-                ],
-              ),
-              const SizedBox(height: 34),
-              Text(
-                title,
-                style: Theme.of(context).textTheme.headlineLarge
-                    ?.copyWith(color: Colors.white),
-              ),
-              const SizedBox(height: 20),
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: MarinaColors.nightSurface.withValues(alpha: .88),
-                  border: Border.all(color: MarinaColors.nightLine),
-                  borderRadius: BorderRadius.circular(26),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: .18),
-                      blurRadius: 30,
-                      offset: const Offset(0, 14),
+  Widget build(BuildContext context) => AnnotatedRegion<SystemUiOverlayStyle>(
+    value: SystemUiOverlayStyle.light,
+    child: Scaffold(
+    backgroundColor: MarinaColors.midnight,
+    body: DecoratedBox(
+      decoration: const BoxDecoration(
+        gradient: RadialGradient(
+          center: Alignment(0, -.8),
+          radius: 1.3,
+          colors: [Color(0xFF1A2438), MarinaColors.midnight],
+        ),
+      ),
+      child: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 540),
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(20, 22, 20, 30),
+              children: [
+                Row(
+                  children: [
+                    MarinaIconButton(
+                      icon: Icons.arrow_back_ios_new_rounded,
+                      dark: true,
+                      onTap: () => context.canPop()
+                          ? context.pop()
+                          : context.go('/welcome'),
                     ),
+                    const Spacer(),
+                    const MarinaWordmark(dark: false, compact: true),
+                    const Spacer(),
+                    const SizedBox(width: 42),
                   ],
                 ),
-                child: Theme(
-                  data: MarinaTheme.dark(),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: children,
+                const SizedBox(height: 34),
+                Text(
+                  title,
+                  style: MarinaType.display(context, size: 30, color: Colors.white),
+                ),
+                const SizedBox(height: 6),
+                const GoldDivider(width: 110),
+                const SizedBox(height: 22),
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: MarinaColors.nightSurface.withValues(alpha: .9),
+                    border: Border.all(
+                      color: MarinaColors.gold.withValues(alpha: .22),
+                    ),
+                    borderRadius: BorderRadius.circular(28),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: .3),
+                        blurRadius: 34,
+                        offset: const Offset(0, 16),
+                      ),
+                    ],
+                  ),
+                  child: Theme(
+                    data: MarinaTheme.dark(),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: children,
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
+    ),
     ),
   );
 }

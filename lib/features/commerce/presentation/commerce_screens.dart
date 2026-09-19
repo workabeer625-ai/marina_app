@@ -1,5 +1,3 @@
-// ignore_for_file: deprecated_member_use
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -20,7 +18,9 @@ class CartScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final cart = ref.watch(cartProvider);
+    final p = MarinaPalette.of(context);
     return SafeArea(
+      top: false,
       child: cart.when(
         loading: () => const LoadingState(),
         error: (error, _) => ErrorState(
@@ -31,30 +31,84 @@ class CartScreen extends ConsumerWidget {
           if (data.items.isEmpty) {
             return EmptyState(
               icon: Icons.shopping_bag_outlined,
-              action: FilledButton(
+              message: context.tr('emptyBag'),
+              action: MarinaGoldButton(
+                label: context.tr('continueShopping'),
+                icon: Icons.storefront_rounded,
                 onPressed: () => context.go('/products'),
-                child: Text(context.tr('continueShopping')),
               ),
             );
           }
           return Column(
             children: [
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.fromLTRB(20, 22, 20, 24),
-                decoration: const BoxDecoration(
-                  color: MarinaColors.navy,
-                  borderRadius: BorderRadius.vertical(
-                    bottom: Radius.circular(28),
-                  ),
-                ),
-                child: Align(
-                  alignment: AlignmentDirectional.centerStart,
-                  child: Text(
-                    context.tr('bag'),
-                    style: Theme.of(context).textTheme.headlineLarge
-                        ?.copyWith(color: Colors.white),
-                  ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(18, 14, 18, 12),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        context.tr('bag'),
+                        style: MarinaType.display(context, size: 26),
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 11,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: p.goldSoft,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: p.gold.withValues(alpha: .35),
+                        ),
+                      ),
+                      child: Text(
+                        '${data.items.length} ${context.tr('items')}',
+                        style: TextStyle(
+                          color: p.gold,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    TextButton.icon(
+                      style: TextButton.styleFrom(
+                        foregroundColor: p.isDark
+                            ? const Color(0xFFE58877)
+                            : MarinaColors.danger,
+                        textStyle: const TextStyle(fontSize: 12.5),
+                      ),
+                      icon: const Icon(
+                        Icons.delete_sweep_outlined,
+                        size: 17,
+                      ),
+                      label: Text(
+                        Localizations.localeOf(context).languageCode == 'ar'
+                            ? 'إفراغ السلة'
+                            : 'Clear cart',
+                      ),
+                      onPressed: () async {
+                        try {
+                          await ref.read(cartProvider.notifier).clear();
+                        } catch (error) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  apiFailureMessage(
+                                    error,
+                                    context.tr('retry'),
+                                  ),
+                                ),
+                              ),
+                            );
+                          }
+                        }
+                      },
+                    ),
+                  ],
                 ),
               ),
               Expanded(
@@ -62,7 +116,7 @@ class CartScreen extends ConsumerWidget {
                   onRefresh: () =>
                       ref.read(cartProvider.notifier).refreshCart(),
                   child: ListView.separated(
-                    padding: const EdgeInsets.all(18),
+                    padding: const EdgeInsets.fromLTRB(18, 4, 18, 12),
                     itemCount: data.items.length,
                     separatorBuilder: (_, _) => const SizedBox(height: 12),
                     itemBuilder: (_, index) =>
@@ -70,30 +124,20 @@ class CartScreen extends ConsumerWidget {
                   ),
                 ),
               ),
-              TextButton.icon(
-                icon: const Icon(Icons.delete_sweep_outlined),
-                label: Text(Localizations.localeOf(context).languageCode == 'ar' ? 'إفراغ السلة' : 'Clear cart'),
-                onPressed: () async {
-                  try {
-                    await ref.read(cartProvider.notifier).clear();
-                  } catch (error) {
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                        content: Text(apiFailureMessage(error, context.tr('retry'))),
-                      ));
-                    }
-                  }
-                },
-              ),
               OrderTotals(snapshot: data),
-              Padding(
-                padding: const EdgeInsets.all(18),
-                child: FilledButton(
-                  onPressed: () => context.push('/checkout'),
-                  style: FilledButton.styleFrom(
-                    minimumSize: const Size.fromHeight(56),
+              Container(
+                padding: const EdgeInsets.fromLTRB(18, 14, 18, 14),
+                decoration: BoxDecoration(
+                  color: p.surface,
+                  border: Border(top: BorderSide(color: p.line)),
+                ),
+                child: SafeArea(
+                  top: false,
+                  child: MarinaGoldButton(
+                    label: context.tr('checkout'),
+                    icon: Icons.lock_outline_rounded,
+                    onPressed: () => context.push('/checkout'),
                   ),
-                  child: Text(context.tr('checkout')),
                 ),
               ),
             ],
@@ -106,6 +150,7 @@ class CartScreen extends ConsumerWidget {
 
 class _CartItem extends ConsumerStatefulWidget {
   const _CartItem({required this.line});
+
   final CartLine line;
 
   @override
@@ -133,97 +178,142 @@ class _CartItemState extends ConsumerState<_CartItem> {
   }
 
   @override
-  Widget build(BuildContext context) => MarinaSectionCard(
-    child: Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(16),
-          child: SizedBox(
-            width: 96,
-            height: 118,
-            child: widget.line.image == null
-                ? const ColoredBox(
-                    color: MarinaTheme.sand,
-                    child: Icon(Icons.checkroom, size: 40),
-                  )
-                : MarinaNetworkImage(
-                    url: widget.line.image!,
-                    fit: BoxFit.cover,
-                  ),
+  Widget build(BuildContext context) {
+    final p = MarinaPalette.of(context);
+    final variantsText = [
+      widget.line.color,
+      widget.line.size,
+    ].whereType<String>().where((x) => x.isNotEmpty).join(' • ');
+    return MarinaSectionCard(
+      padding: const EdgeInsets.all(12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: SizedBox(
+              width: 92,
+              height: 114,
+              child: widget.line.image == null
+                  ? ColoredBox(
+                      color: p.surfaceSoft,
+                      child: Icon(
+                        Icons.checkroom_rounded,
+                        size: 38,
+                        color: p.muted.withValues(alpha: .6),
+                      ),
+                    )
+                  : MarinaNetworkImage(
+                      url: widget.line.image!,
+                      fit: BoxFit.cover,
+                    ),
+            ),
           ),
-        ),
-        const SizedBox(width: 15),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                widget.line.name,
-                style: const TextStyle(fontWeight: FontWeight.w600),
-              ),
-              if ([
-                widget.line.color,
-                widget.line.size,
-              ].whereType<String>().where((x) => x.isNotEmpty).isNotEmpty)
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                 Text(
-                  [
-                    widget.line.color,
-                    widget.line.size,
-                  ].whereType<String>().where((x) => x.isNotEmpty).join(' • '),
-                  style: const TextStyle(color: Colors.grey),
+                  widget.line.name,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
+                    height: 1.3,
+                    color: p.ink,
+                  ),
                 ),
-              const SizedBox(height: 8),
-              MarinaPrice(value: widget.line.price),
-              const SizedBox(height: 8),
-              Container(
-                decoration: BoxDecoration(
-                  color: MarinaColors.softBlue,
-                  borderRadius: BorderRadius.circular(13),
+                if (variantsText.isNotEmpty) ...[
+                  const SizedBox(height: 3),
+                  Text(
+                    variantsText,
+                    style: TextStyle(color: p.muted, fontSize: 12),
+                  ),
+                ],
+                const SizedBox(height: 8),
+                MarinaPrice(value: widget.line.price),
+                const SizedBox(height: 10),
+                Container(
+                  decoration: BoxDecoration(
+                    color: p.background,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: p.line),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _StepButton(
+                        icon: Icons.remove_rounded,
+                        onTap: busy
+                            ? null
+                            : () => update(widget.line.quantity - 1),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 6),
+                        child: busy
+                            ? const SizedBox.square(
+                                dimension: 15,
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : Text(
+                                '${widget.line.quantity}',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 13.5,
+                                  color: p.ink,
+                                ),
+                              ),
+                      ),
+                      _StepButton(
+                        icon: Icons.add_rounded,
+                        onTap: busy ||
+                                widget.line.quantity >= widget.line.available
+                            ? null
+                            : () => update(widget.line.quantity + 1),
+                      ),
+                    ],
+                  ),
                 ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      iconSize: 18,
-                      visualDensity: VisualDensity.compact,
-                      onPressed: busy
-                          ? null
-                          : () => update(widget.line.quantity - 1),
-                      icon: const Icon(Icons.remove),
-                    ),
-                    if (busy)
-                      const SizedBox.square(
-                        dimension: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    else
-                      Text('${widget.line.quantity}'),
-                    IconButton(
-                      iconSize: 18,
-                      visualDensity: VisualDensity.compact,
-                      onPressed:
-                          busy || widget.line.quantity >= widget.line.available
-                          ? null
-                          : () => update(widget.line.quantity + 1),
-                      icon: const Icon(Icons.add),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-        IconButton(
-          tooltip: MaterialLocalizations.of(context).deleteButtonTooltip,
-          onPressed: busy ? null : () => update(0),
-          icon: const Icon(
-            Icons.delete_outline_rounded,
-            color: Color(0xFFB42318),
-            size: 20,
+          IconButton(
+            tooltip: MaterialLocalizations.of(context).deleteButtonTooltip,
+            onPressed: busy ? null : () => update(0),
+            style: IconButton.styleFrom(
+              foregroundColor:
+                  p.isDark ? const Color(0xFFE58877) : MarinaColors.danger,
+            ),
+            icon: const Icon(Icons.delete_outline_rounded, size: 20),
           ),
-        ),
-      ],
+        ],
+      ),
+    );
+  }
+}
+
+class _StepButton extends StatelessWidget {
+  const _StepButton({required this.icon, required this.onTap});
+
+  final IconData icon;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) => InkWell(
+    onTap: onTap,
+    borderRadius: BorderRadius.circular(14),
+    child: Padding(
+      padding: const EdgeInsets.all(8),
+      child: Icon(
+        icon,
+        size: 16,
+        color: onTap == null
+            ? MarinaPalette.of(context).muted.withValues(alpha: .5)
+            : MarinaPalette.of(context).gold,
+      ),
     ),
   );
 }
@@ -234,6 +324,7 @@ class OrderTotals extends ConsumerStatefulWidget {
     required this.snapshot,
     this.allowCoupon = true,
   });
+
   final CartSnapshot snapshot;
   final bool allowCoupon;
 
@@ -270,6 +361,7 @@ class _OrderTotalsState extends ConsumerState<OrderTotals> {
 
   @override
   Widget build(BuildContext context) {
+    final p = MarinaPalette.of(context);
     final quote = widget.snapshot.quote;
     final subtotal = quote?.subtotal ?? widget.snapshot.subtotal;
     final shipping = quote?.shipping ?? (subtotal >= 300 ? 0 : 20);
@@ -288,6 +380,7 @@ class _OrderTotalsState extends ConsumerState<OrderTotals> {
                 decoration: InputDecoration(
                   hintText: context.tr('coupon'),
                   errorText: error,
+                  prefixIcon: const Icon(Icons.local_offer_outlined, size: 19),
                   suffixIcon: TextButton(
                     onPressed: busy ? null : apply,
                     child: busy
@@ -301,34 +394,96 @@ class _OrderTotalsState extends ConsumerState<OrderTotals> {
               ),
               const SizedBox(height: 14),
             ],
-            _row(context.tr('subtotal'), subtotal),
-            if (discount > 0) _row(context.tr('discount'), -discount),
-            _row(context.tr('shipping'), shipping),
-            _row(context.tr('tax'), tax),
-            const Divider(height: 22),
-            _row(context.tr('total'), total, bold: true),
+            _row(context, p, context.tr('subtotal'), subtotal),
+            if (discount > 0)
+              _row(
+                context,
+                p,
+                context.tr('discount'),
+                -discount,
+                color: p.gold,
+              ),
+            _row(
+              context,
+              p,
+              context.tr('shipping'),
+              shipping,
+              hint: shipping == 0 ? context.tr('free') : null,
+            ),
+            _row(context, p, context.tr('tax'), tax),
+            Container(
+              height: 1,
+              margin: const EdgeInsets.symmetric(vertical: 12),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    p.line,
+                    p.gold.withValues(alpha: .55),
+                    p.line,
+                  ],
+                ),
+              ),
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  context.tr('total'),
+                  style: TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 17,
+                    color: p.ink,
+                  ),
+                ),
+                MarinaPrice(value: total, large: true),
+              ],
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _row(String label, double value, {bool bold = false}) => Padding(
-    padding: const EdgeInsets.symmetric(vertical: 4),
+  Widget _row(
+    BuildContext context,
+    MarinaPalette p,
+    String label,
+    double value, {
+    bool bold = false,
+    Color? color,
+    String? hint,
+  }) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 4.5),
     child: Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
           label,
-          style: bold
-              ? const TextStyle(fontWeight: FontWeight.w700, fontSize: 18)
-              : null,
+          style: TextStyle(fontSize: 13.5, color: p.muted),
         ),
-        Text(
-          _money(value),
-          style: bold
-              ? const TextStyle(fontWeight: FontWeight.w700, fontSize: 18)
-              : null,
+        Row(
+          children: [
+            if (hint != null) ...[
+              Text(
+                hint,
+                style: TextStyle(
+                  color: p.gold,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(width: 6),
+            ],
+            Text(
+              _money(value),
+              style: TextStyle(
+                fontWeight: FontWeight.w700,
+                fontSize: 14,
+                color: color ?? p.ink.withValues(alpha: .85),
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
+            ),
+          ],
         ),
       ],
     ),
@@ -420,15 +575,12 @@ class _CheckoutState extends ConsumerState<CheckoutScreen> {
             return ListView(
               padding: const EdgeInsets.all(18),
               children: [
-                MarinaSectionCard(
+                _StepCard(
+                  step: '1',
+                  title: context.tr('deliveryAddress'),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        context.tr('deliveryAddress'),
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
-                      const SizedBox(height: 10),
                       if (items.isEmpty)
                         OutlinedButton.icon(
                           onPressed: () => context.push('/addresses/new'),
@@ -437,50 +589,52 @@ class _CheckoutState extends ConsumerState<CheckoutScreen> {
                         )
                       else
                         for (final address in items)
-                          RadioListTile<String>(
-                            value: address.id,
-                            groupValue: selected,
-                            onChanged: (value) =>
-                                setState(() => addressId = value),
-                            title: Text(
-                              '${address.label} — ${address.recipient}',
-                            ),
-                            subtitle: Text('${address.line1}, ${address.city}'),
+                          _RadioCard(
+                            selected: selected == address.id,
+                            onTap: () =>
+                                setState(() => addressId = address.id),
+                            title:
+                                '${address.label} — ${address.recipient}',
+                            subtitle:
+                                '${address.line1}, ${address.city}',
                           ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 18),
-                CheckoutTile(
+                const SizedBox(height: 16),
+                _StepCard(
+                  step: '2',
                   title: context.tr('deliveryOption'),
-                  subtitle: snapshot.quote?.shipping == 0
-                      ? context.tr('standardDeliveryFree')
-                      : '${context.tr('standardDelivery')} — ${_money(snapshot.quote?.shipping ?? 20)}',
-                  icon: Icons.local_shipping_outlined,
+                  child: CheckoutTile(
+                    title: context.tr('standardDelivery'),
+                    subtitle: snapshot.quote?.shipping == 0
+                        ? context.tr('standardDeliveryFree')
+                        : '${context.tr('standardDelivery')} — ${_money(snapshot.quote?.shipping ?? 20)}',
+                    icon: Icons.local_shipping_outlined,
+                    compact: true,
+                  ),
                 ),
-                MarinaSectionCard(
+                const SizedBox(height: 16),
+                _StepCard(
+                  step: '3',
+                  title: context.tr('paymentMethod'),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        context.tr('paymentMethod'),
-                        style: Theme.of(context).textTheme.titleLarge,
+                      _RadioCard(
+                        selected: true,
+                        onTap: () {},
+                        title: context.tr('cashOnDelivery'),
+                        subtitle: context.tr('cashOnDeliveryDescription'),
+                        icon: Icons.payments_outlined,
                       ),
-                      RadioListTile<String>(
-                        value: 'CashOnDelivery',
-                        groupValue: 'CashOnDelivery',
-                        onChanged: (_) {},
-                        title: Text(context.tr('cashOnDelivery')),
-                        subtitle: Text(context.tr('cashOnDeliveryDescription')),
-                        secondary: const Icon(Icons.payments_outlined),
-                      ),
-                      RadioListTile<String>(
-                        value: 'Online',
-                        groupValue: 'CashOnDelivery',
-                        onChanged: null,
-                        title: Text(context.tr('onlinePayment')),
-                        subtitle: Text(context.tr('onlineUnavailable')),
-                        secondary: const Icon(Icons.credit_card_off_outlined),
+                      const SizedBox(height: 8),
+                      _RadioCard(
+                        selected: false,
+                        enabled: false,
+                        onTap: null,
+                        title: context.tr('onlinePayment'),
+                        subtitle: context.tr('onlineUnavailable'),
+                        icon: Icons.credit_card_off_outlined,
                       ),
                     ],
                   ),
@@ -492,20 +646,79 @@ class _CheckoutState extends ConsumerState<CheckoutScreen> {
                     padding: const EdgeInsets.only(top: 16),
                     child: Text(
                       error!,
-                      style: const TextStyle(color: Colors.red),
+                      style: TextStyle(
+                        color: MarinaPalette.of(context).isDark
+                            ? const Color(0xFFE58877)
+                            : MarinaColors.danger,
+                      ),
                     ),
                   ),
                 const SizedBox(height: 24),
-                FilledButton(
+                MarinaGoldButton(
+                  label: context.tr('confirmOrder'),
+                  icon: Icons.verified_rounded,
+                  busy: busy,
                   onPressed: busy ? null : () => submit(snapshot, items),
-                  child: busy
-                      ? const CircularProgressIndicator()
-                      : Text(context.tr('confirmOrder')),
                 ),
+                const SizedBox(height: 30),
               ],
             );
           },
         ),
+      ),
+    );
+  }
+}
+
+/// Numbered checkout section with a gold step marker.
+class _StepCard extends StatelessWidget {
+  const _StepCard({
+    required this.step,
+    required this.title,
+    required this.child,
+  });
+
+  final String step, title;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = MarinaPalette.of(context);
+    return MarinaSectionCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 30,
+                height: 30,
+                alignment: Alignment.center,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: MarinaGradients.gold,
+                ),
+                child: Text(
+                  step,
+                  style: const TextStyle(
+                    color: MarinaColors.onGold,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 13.5,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 11),
+              Expanded(
+                child: Text(
+                  title,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          child,
+        ],
       ),
     );
   }
@@ -517,67 +730,248 @@ class CheckoutTile extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.icon,
+    this.compact = false,
   });
+
   final String title, subtitle;
   final IconData icon;
+  final bool compact;
 
   @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(bottom: 18),
-    child: ListTile(
-      shape: RoundedRectangleBorder(
-        side: const BorderSide(color: MarinaTheme.line),
+  Widget build(BuildContext context) {
+    final p = MarinaPalette.of(context);
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: p.background,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: p.line),
       ),
-      leading: CircleAvatar(
-        backgroundColor: MarinaTheme.blue.withValues(alpha: .45),
-        child: Icon(icon),
+      child: Row(
+        children: [
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: p.goldSoft,
+              borderRadius: BorderRadius.circular(13),
+            ),
+            child: Icon(icon, color: p.gold, size: 21),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 14,
+                    color: p.ink,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: TextStyle(fontSize: 12.5, color: p.muted),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
-      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
-      subtitle: Text(subtitle),
-    ),
-  );
+    );
+  }
+}
+
+/// Card-styled radio option used for addresses & payment methods.
+class _RadioCard extends StatelessWidget {
+  const _RadioCard({
+    required this.selected,
+    required this.title,
+    required this.subtitle,
+    this.onTap,
+    this.enabled = true,
+    this.icon,
+  });
+
+  final bool selected;
+  final String title, subtitle;
+  final VoidCallback? onTap;
+  final bool enabled;
+  final IconData? icon;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = MarinaPalette.of(context);
+    final borderColor = selected
+        ? p.gold
+        : enabled ? p.line : p.line.withValues(alpha: .6);
+    return Opacity(
+      opacity: enabled ? 1 : .62,
+      child: Material(
+        color: selected
+            ? p.goldSoft.withValues(alpha: p.isDark ? .8 : .55)
+            : p.background,
+        borderRadius: BorderRadius.circular(16),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: borderColor,
+                width: selected ? 1.4 : 1,
+              ),
+            ),
+            child: Row(
+              children: [
+                if (icon != null) ...[
+                  Icon(
+                    icon,
+                    size: 20,
+                    color: selected ? p.gold : p.muted,
+                  ),
+                  const SizedBox(width: 12),
+                ],
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14,
+                          color: p.ink,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle,
+                        style: TextStyle(fontSize: 12.5, color: p.muted),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  width: 20,
+                  height: 20,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: selected ? p.gold : Colors.transparent,
+                    border: Border.all(
+                      color: selected ? p.gold : p.muted.withValues(alpha: .7),
+                      width: 1.6,
+                    ),
+                  ),
+                  child: selected
+                      ? const Icon(
+                          Icons.check_rounded,
+                          size: 13,
+                          color: MarinaColors.onGold,
+                        )
+                      : null,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class OrderSuccessScreen extends StatelessWidget {
   const OrderSuccessScreen({super.key, required this.order});
+
   final Map<String, dynamic>? order;
 
   @override
   Widget build(BuildContext context) {
+    final p = MarinaPalette.of(context);
     final id = order?['id']?.toString();
     final number = order?['publicNumber']?.toString();
     return Scaffold(
+      backgroundColor: p.background,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(28),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const CircleAvatar(
-                radius: 46,
-                backgroundColor: MarinaTheme.blue,
-                child: Icon(Icons.check, size: 48),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 520),
+            child: Padding(
+              padding: const EdgeInsets.all(28),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 108,
+                    height: 108,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: MarinaGradients.gold,
+                      boxShadow: MarinaShadows.glow,
+                    ),
+                    child: const Icon(
+                      Icons.check_rounded,
+                      size: 54,
+                      color: MarinaColors.onGold,
+                    ),
+                  ),
+                  const SizedBox(height: 28),
+                  Text(
+                    context.tr('orderSuccess'),
+                    textAlign: TextAlign.center,
+                    style: MarinaType.display(context, size: 27),
+                  ),
+                  const SizedBox(height: 14),
+                  const GoldDivider(width: 150),
+                  const SizedBox(height: 18),
+                  if (number != null)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 18,
+                        vertical: 10,
+                      ),
+                      decoration: BoxDecoration(
+                        color: p.surface,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: p.gold.withValues(alpha: .4)),
+                      ),
+                      child: SelectableText(
+                        '${context.tr('orderNumber')}: $number',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          color: p.ink,
+                        ),
+                      ),
+                    ),
+                  const SizedBox(height: 34),
+                  if (id != null)
+                    FilledButton(
+                      onPressed: () => context.go('/orders/$id'),
+                      style: FilledButton.styleFrom(
+                        minimumSize: const Size.fromHeight(56),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.local_shipping_outlined, size: 19),
+                          const SizedBox(width: 9),
+                          Text(context.tr('trackOrder')),
+                        ],
+                      ),
+                    ),
+                  TextButton(
+                    onPressed: () => context.go('/home'),
+                    child: Text(context.tr('continueShopping')),
+                  ),
+                ],
               ),
-              const SizedBox(height: 24),
-              Text(
-                context.tr('orderSuccess'),
-                style: Theme.of(context).textTheme.headlineLarge,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 10),
-              if (number != null) SelectableText(number),
-              const SizedBox(height: 30),
-              if (id != null)
-                FilledButton(
-                  onPressed: () => context.go('/orders/$id'),
-                  child: Text(context.tr('trackOrder')),
-                ),
-              TextButton(
-                onPressed: () => context.go('/home'),
-                child: Text(context.tr('continueShopping')),
-              ),
-            ],
+            ),
           ),
         ),
       ),

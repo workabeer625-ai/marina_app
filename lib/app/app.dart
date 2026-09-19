@@ -12,11 +12,12 @@ class MarinaApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final locale = ref.watch(localeProvider);
     final themeMode = ref.watch(themeModeProvider);
+    final arabic = locale.languageCode == 'ar';
     return MaterialApp.router(
       debugShowCheckedModeBanner: false,
       title: 'MARINA',
-      theme: MarinaTheme.light(),
-      darkTheme: MarinaTheme.dark(),
+      theme: MarinaTheme.light(arabic: arabic),
+      darkTheme: MarinaTheme.dark(arabic: arabic),
       themeMode: themeMode,
       locale: locale,
       supportedLocales: const [Locale('en'), Locale('ar')],

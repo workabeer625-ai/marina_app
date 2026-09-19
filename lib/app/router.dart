@@ -187,6 +187,10 @@ final router = GoRouter(
     GoRoute(path: '/sessions', builder: (_, _) => const SessionsScreen()),
     GoRoute(path: '/language', builder: (_, _) => const LanguageScreen()),
     GoRoute(
+      path: '/appearance',
+      builder: (_, _) => const AppearanceScreen(),
+    ),
+    GoRoute(
       path: '/about',
       builder: (_, _) =>
           const InfoScreen(titleKey: 'about', bodyKey: 'aboutBody'),

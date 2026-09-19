@@ -315,28 +315,31 @@ class _QueueCard extends StatelessWidget {
   final String title, subtitle, meta;
   final List<Widget> actions;
   @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(18),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      border: Border.all(color: MarinaTheme.line),
-      borderRadius: BorderRadius.circular(16),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(title, style: Theme.of(context).textTheme.titleLarge),
-        const SizedBox(height: 4),
-        Text(meta, style: const TextStyle(color: Color(0xFF6E6A65))),
-        const SizedBox(height: 12),
-        Text(subtitle),
-        if (actions.isNotEmpty) ...[
-          const SizedBox(height: 16),
-          Wrap(spacing: 10, runSpacing: 8, children: actions),
+  Widget build(BuildContext context) {
+    final p = MarinaPalette.of(context);
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: p.surface,
+        border: Border.all(color: p.line),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: Theme.of(context).textTheme.titleLarge),
+          const SizedBox(height: 4),
+          Text(meta, style: TextStyle(color: p.muted, fontSize: 12.5)),
+          const SizedBox(height: 12),
+          Text(subtitle),
+          if (actions.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            Wrap(spacing: 10, runSpacing: 8, children: actions),
+          ],
         ],
-      ],
-    ),
-  );
+      ),
+    );
+  }
 }
 
 String _status(BuildContext context, String value) {

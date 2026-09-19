@@ -10,7 +10,9 @@ class MarinaWordmark extends StatelessWidget {
     this.compact = false,
     this.markOnly = false,
   });
+
   final bool dark, compact, markOnly;
+
   @override
   Widget build(BuildContext context) {
     final color = dark ? MarinaColors.navy : Colors.white;
@@ -35,17 +37,20 @@ class MarinaWordmark extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'M A R I N A',
+                    'MARINA',
                     style: TextStyle(
+                      fontFamily: 'Marcellus',
+                      fontFamilyFallback: ['Tajawal'],
                       fontSize: compact ? 17 : 25,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: compact ? 1 : 2,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: compact ? 2.6 : 4.5,
                       color: color,
+                      height: 1.1,
                     ),
                   ),
                   if (!compact)
                     Text(
-                      'مارينا',
+                      'مــــارينا',
                       textDirection: TextDirection.rtl,
                       style: TextStyle(
                         fontSize: 11,

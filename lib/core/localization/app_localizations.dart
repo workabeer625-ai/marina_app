@@ -337,6 +337,20 @@ const _en = <String, String>{
   'page': 'Page',
   'previousPage': 'Previous page',
   'nextPage': 'Next page',
+  'appearance': 'Appearance',
+  'appearanceSubtitle': 'Choose how MARINA looks — day, night, or follow your system automatically.',
+  'themeSystem': 'System',
+  'themeSystemHint': 'Follow your device appearance automatically',
+  'themeLight': 'Day',
+  'themeLightHint': 'Warm ivory & deep navy',
+  'themeDark': 'Night',
+  'themeDarkHint': 'Midnight navy & champagne gold',
+  'recommended': 'Recommended',
+  'free': 'Free',
+  'emptyBag': 'Your bag is empty',
+  'emptyWishlist': 'Your wishlist is empty',
+  'sectionPreferences': 'Preferences',
+  'sectionSupport': 'Help & information',
 };
 
 const _ar = <String, String>{
@@ -641,6 +655,20 @@ const _ar = <String, String>{
   'page': 'الصفحة',
   'previousPage': 'الصفحة السابقة',
   'nextPage': 'الصفحة التالية',
+  'appearance': 'المظهر',
+  'appearanceSubtitle': 'اختر شكل مارينا — نهاري أو ليلي أو حسب إعداد جهازك تلقائيًا.',
+  'themeSystem': 'حسب النظام',
+  'themeSystemHint': 'يتبع مظهر جهازك تلقائيًا',
+  'themeLight': 'نهاري',
+  'themeLightHint': 'عاجي دافئ وكحلي عميق',
+  'themeDark': 'ليلي',
+  'themeDarkHint': 'كحلي منتصف الليل وذهبي شمبانيا',
+  'recommended': 'مختارات لك',
+  'free': 'مجانًا',
+  'emptyBag': 'سلتك فارغة',
+  'emptyWishlist': 'قائمة مفضلتك فارغة',
+  'sectionPreferences': 'التفضيلات',
+  'sectionSupport': 'الدعم والمعلومات',
 };
 
 extension MarinaStrings on BuildContext {
