@@ -180,11 +180,13 @@ class GoldDivider extends StatelessWidget {
           Expanded(
             child: Container(
               height: 1,
-              gradient: LinearGradient(
-                colors: [
-                  Colors.transparent,
-                  p.gold.withValues(alpha: .8),
-                ],
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Colors.transparent,
+                    p.gold.withValues(alpha: .8),
+                  ],
+                ),
               ),
             ),
           ),
@@ -198,11 +200,13 @@ class GoldDivider extends StatelessWidget {
           Expanded(
             child: Container(
               height: 1,
-              gradient: LinearGradient(
-                colors: [
-                  p.gold.withValues(alpha: .8),
-                  Colors.transparent,
-                ],
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    p.gold.withValues(alpha: .8),
+                    Colors.transparent,
+                  ],
+                ),
               ),
             ),
           ),
@@ -441,8 +445,10 @@ class ProductCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = MarinaPalette.of(context);
-    final compareAt = product.compareAtPrice;
-    final hasDiscount = compareAt != null && compareAt > product.price;
+    final compareAtValue = product.compareAtPrice;
+    final hasDiscount =
+        compareAtValue != null && compareAtValue > product.price;
+    final compareAt = compareAtValue ?? 0.0;
     final discount =
         hasDiscount ? (((1 - product.price / compareAt) * 100).round()) : 0;
 
@@ -535,7 +541,7 @@ class ProductCard extends StatelessWidget {
                           const SizedBox(width: 6),
                           Flexible(
                             child: Text(
-                              'SAR ${compareAt!.toStringAsFixed(0)}',
+                              'SAR ${compareAt.toStringAsFixed(0)}',
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(

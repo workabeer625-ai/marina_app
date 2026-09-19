@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/localization/app_localizations.dart';
 import '../../../core/network/api_client.dart';
+import '../../../core/network/api_models.dart';
 import '../../../core/state/commerce_state.dart';
 import '../../../core/theme/marina_theme.dart';
 import '../../../shared/widgets/common.dart';
@@ -47,8 +48,9 @@ class HomeScreen extends ConsumerWidget {
     final culture = Localizations.localeOf(context).languageCode;
     final home = ref.watch(catalogHomeProvider(culture));
     final authed = apiClient.isAuthenticated;
-    final cart = authed ? ref.watch(cartProvider) : const AsyncLoading();
-    final notifications = authed
+    final AsyncValue<CartSnapshot> cart =
+        authed ? ref.watch(cartProvider) : const AsyncLoading();
+    final AsyncValue<ApiPage<CustomerNotification>> notifications = authed
         ? ref.watch(customerNotificationsProvider)
         : const AsyncLoading();
     final bagCount =
@@ -536,7 +538,6 @@ class SectionHeading extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = MarinaPalette.of(context);
     final rtl = Directionality.of(context) == TextDirection.rtl;
     return Row(
       children: [
