@@ -284,9 +284,9 @@ class _FadeSlideInState extends State<FadeSlideIn>
     super.initState();
     final i = widget.index;
     final step = i < 0 ? 0 : (i > 8 ? 8 : i);
-    _controller.forward(
-      delay: Duration(milliseconds: 70 * step),
-    );
+    Future.delayed(Duration(milliseconds: 70 * step), () {
+      if (mounted) _controller.forward();
+    });
   }
 
   @override

@@ -1791,9 +1791,11 @@ class _DetailState extends ConsumerState<ProductDetailScreen> {
                                   }
                                   setState(() => adding = true);
                                   try {
-                                    await ref
-                                        .read(cartProvider.notifier)
-                                        .add(selected.id, quantity: quantity);
+                                    for (var i = 0; i < quantity; i++) {
+                                      await ref
+                                          .read(cartProvider.notifier)
+                                          .add(selected.id);
+                                    }
                                     if (context.mounted) {
                                       ScaffoldMessenger.of(context)
                                           .showSnackBar(
@@ -1950,7 +1952,6 @@ class _ProductGalleryState extends State<_ProductGallery> {
 
   @override
   Widget build(BuildContext context) {
-    final p = MarinaPalette.of(context);
     if (widget.images.isEmpty) {
       return Container(
         height: 420,
