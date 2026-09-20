@@ -577,9 +577,10 @@ class ErrorState extends StatelessWidget {
 /// Fashion product experience card: full-bleed editorial image, refined
 /// typography, gold discount seal and a quick-add jewel over the photo.
 class ProductCard extends ConsumerWidget {
-  const ProductCard({super.key, required this.product});
+  const ProductCard({super.key, required this.product, this.plate});
 
   final Product product;
+  final int? plate;
 
   Future<void> _quickAdd(BuildContext context, WidgetRef ref) async {
     final variantId = product.variantId;
@@ -619,12 +620,9 @@ class ProductCard extends ConsumerWidget {
         product.variantId != null && product.variantId!.isNotEmpty;
 
     return Material(
-      color: p.surface,
+      color: Colors.transparent,
       clipBehavior: Clip.antiAlias,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(24),
-        side: BorderSide(color: p.line.withValues(alpha: .85)),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
       child: InkWell(
         onTap: () => context.push('/product/${product.id}', extra: product),
         child: Column(
@@ -714,6 +712,19 @@ class ProductCard extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  if (plate != null) ...[
+                    Text(
+                      'N°${plate.toString().padLeft(2, '0')}',
+                      style: TextStyle(
+                        fontFamily: 'Marcellus',
+                        fontSize: 12.5,
+                        letterSpacing: 1,
+                        height: 1,
+                        color: p.gold,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                  ],
                   Text(
                     product.name,
                     maxLines: 2,
@@ -1050,4 +1061,91 @@ class StatusChip extends StatelessWidget {
 extension _StatusColorAdjust on Color {
   Color brighten() => Color.lerp(this, Colors.white, .25)!;
   Color deepen() => Color.lerp(this, Colors.black, .12)!;
+}
+
+
+/// Fashion-house marquee — a seamless running gold headline.
+class MarinaTicker extends StatefulWidget {
+  const MarinaTicker({super.key, required this.items});
+
+  final List<String> items;
+
+  @override
+  State<MarinaTicker> createState() => _MarinaTickerState();
+}
+
+class _MarinaTickerState extends State<MarinaTicker>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(seconds: 26),
+  )..repeat();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final p = MarinaPalette.of(context);
+    final rtl = Directionality.of(context) == TextDirection.rtl;
+    final segment = widget.items.length * 400.0;
+    return Container(
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(color: p.line.withValues(alpha: .8)),
+        ),
+      ),
+      padding: const EdgeInsets.symmetric(vertical: 11),
+      child: ClipRect(
+        child: AnimatedBuilder(
+          animation: _controller,
+          builder: (context, child) {
+            final shift = _controller.value * segment;
+            return Transform.translate(
+              offset: Offset(rtl ? shift - segment : -shift, 0),
+              child: child,
+            );
+          },
+          child: OverflowBox(
+            maxWidth: double.infinity,
+            alignment: AlignmentDirectional.centerStart,
+            child: Row(
+              children: [
+                for (var n = 0; n < 4; n++)
+                  for (final item in widget.items)
+                    SizedBox(
+                      width: 400,
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              item.toUpperCase(),
+                              maxLines: 1,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing:
+                                    MarinaType.isArabic(context) ? 0 : 2.8,
+                                color: p.gold,
+                              ),
+                            ),
+                          ),
+                          Text(
+                            ' ✦ ',
+                            style: TextStyle(color: p.gold, fontSize: 11),
+                          ),
+                        ],
+                      ),
+                    ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }

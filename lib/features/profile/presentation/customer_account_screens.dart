@@ -821,7 +821,7 @@ class ApiFavoritesScreen extends ConsumerWidget {
                         itemCount: items.length,
                         itemBuilder: (_, index) => Stack(
                           children: [
-                            ProductCard(product: items[index]),
+                            ProductCard(product: items[index], plate: index + 1),
                             PositionedDirectional(
                               top: 13,
                               end: 13,

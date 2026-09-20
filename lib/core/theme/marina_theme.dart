@@ -539,7 +539,7 @@ class MarinaTheme {
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: dark ? p.gold : MarinaColors.deepRoyal,
+          foregroundColor: p.gold,
           textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
         ),
       ),

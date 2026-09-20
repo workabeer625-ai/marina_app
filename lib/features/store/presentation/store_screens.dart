@@ -200,7 +200,7 @@ class _MagazineBody extends ConsumerWidget {
                       ),
                       const Spacer(),
                       Text(
-                        'MARINA COLLECTION',
+                        'MAISON MARINA · COLLECTION N°26',
                         style: TextStyle(
                           color: MarinaColors.goldBright,
                           fontSize: 10.5,
@@ -248,7 +248,24 @@ class _MagazineBody extends ConsumerWidget {
                           onPressed: () => context.push('/products'),
                         ),
                       ),
-                      const SizedBox(height: 88),
+                      const SizedBox(height: 26),
+                      Center(
+                        child: Container(
+                          width: 1.2,
+                          height: 34,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                MarinaColors.goldBright,
+                                MarinaColors.goldBright.withValues(alpha: 0),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 54),
                     ],
                   ),
                 ),
@@ -276,7 +293,17 @@ class _MagazineBody extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: 22),
+                const SizedBox(height: 14),
+                MarinaTicker(
+                  items: [
+                    context.tr('new'),
+                    context.tr('freeDelivery'),
+                    context.tr('easyReturns'),
+                    'MAISON MARINA',
+                    context.tr('offers'),
+                  ],
+                ),
+                const SizedBox(height: 18),
                 Padding(
                   padding: EdgeInsets.symmetric(
                     horizontal: _pagePadding(wide),
@@ -474,117 +501,77 @@ class _CollectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final gradients = const [
-      [Color(0xFF1A2542), Color(0xFF0B1322)],
-      [Color(0xFF232C46), Color(0xFF101826)],
-      [Color(0xFF1D2A1F), Color(0xFF0C1410)],
-    ];
-    final pair = gradients[index % gradients.length];
+    final p = MarinaPalette.of(context);
     final rtl = Directionality.of(context) == TextDirection.rtl;
+    final numeral = '0${index + 1}';
     return MarinaPressable(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(28),
+      borderRadius: BorderRadius.circular(8),
       child: Container(
-        width: 274,
+        width: 262,
+        padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(28),
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: pair,
-          ),
-          border: Border.all(color: MarinaColors.gold.withValues(alpha: .3)),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x59101B2D),
-              blurRadius: 26,
-              offset: Offset(0, 14),
-            ),
-          ],
+          color: p.surface,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: p.gold.withValues(alpha: .45)),
+          boxShadow: p.cardShadow,
         ),
         child: Stack(
+          clipBehavior: Clip.none,
           children: [
             PositionedDirectional(
-              end: -46,
-              top: -46,
-              child: Container(
-                width: 150,
-                height: 150,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: MarinaColors.gold.withValues(alpha: .22),
-                    width: 1.4,
-                  ),
+              end: -8,
+              bottom: -30,
+              child: Text(
+                numeral,
+                style: TextStyle(
+                  fontFamily: 'Marcellus',
+                  fontFamilyFallback: const ['Tajawal'],
+                  fontSize: 116,
+                  height: 1,
+                  color: p.gold.withValues(alpha: .13),
                 ),
               ),
             ),
-            PositionedDirectional(
-              end: 18,
-              bottom: -60,
-              child: Container(
-                width: 120,
-                height: 120,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: MarinaColors.gold.withValues(alpha: .14),
-                    width: 1,
-                  ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'COLLECTION N°$numeral',
+                  style: MarinaType.kicker(context, color: p.gold, size: 9.5),
                 ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(22),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'COLLECTION',
-                    style: TextStyle(
-                      color: MarinaColors.goldBright,
-                      fontSize: 9.5,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: MarinaType.isArabic(context) ? 0 : 3.4,
-                      height: 1.2,
-                    ),
-                  ),
-                  const Spacer(),
-                  Text(
-                    name,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: MarinaType.display(
-                      context,
-                      size: 22,
-                      height: 1.22,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Text(
-                        context.tr('explore'),
-                        style: TextStyle(
-                          color: MarinaColors.goldBright,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: MarinaType.isArabic(context) ? 0 : .6,
-                        ),
+                const Spacer(),
+                Text(
+                  name,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: MarinaType.display(context, size: 26, height: 1.2),
+                ),
+                const SizedBox(height: 14),
+                Container(width: 36, height: 1.4, color: p.gold),
+                const SizedBox(height: 14),
+                Row(
+                  children: [
+                    Text(
+                      context.tr('explore'),
+                      style: TextStyle(
+                        color: p.gold,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: MarinaType.isArabic(context) ? 0 : .6,
                       ),
-                      const SizedBox(width: 7),
-                      Icon(
-                        rtl
-                            ? Icons.arrow_back_rounded
-                            : Icons.arrow_forward_rounded,
-                        size: 15,
-                        color: MarinaColors.goldBright,
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+                    ),
+                    const SizedBox(width: 7),
+                    Icon(
+                      rtl
+                          ? Icons.arrow_back_rounded
+                          : Icons.arrow_forward_rounded,
+                      size: 15,
+                      color: p.gold,
+                    ),
+                  ],
+                ),
+              ],
             ),
           ],
         ),
@@ -622,6 +609,7 @@ class _EditorialRail extends StatelessWidget {
                 kicker: kicker,
                 title: title,
                 route: route,
+                plate: '0${stagger - 1}',
               ),
             ),
             const SizedBox(height: 16),
@@ -642,7 +630,7 @@ class _EditorialRail extends StatelessWidget {
                         : wide >= 600
                         ? 196
                         : 170,
-                    child: ProductCard(product: items[i]),
+                    child: ProductCard(product: items[i], plate: i + 1),
                   ),
                 ),
               ),
@@ -846,11 +834,23 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                           SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: columns,
                         childAspectRatio: columns == 2 ? .62 : .58,
-                        crossAxisSpacing: 14,
-                        mainAxisSpacing: 18,
+                        crossAxisSpacing: 16,
+                        mainAxisSpacing: 34,
                       ),
                       itemCount: items.length,
-                      itemBuilder: (_, i) => ProductCard(product: items[i]),
+                      itemBuilder: (_, i) {
+                        final card = ProductCard(
+                          product: items[i],
+                          plate: i + 1,
+                        );
+                        if (columns == 2 && i.isOdd) {
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 42),
+                            child: card,
+                          );
+                        }
+                        return card;
+                      },
                     );
                   },
                 ),
@@ -1145,60 +1145,47 @@ class CategoriesScreen extends ConsumerWidget {
                 child: ListView.separated(
                   padding: const EdgeInsets.fromLTRB(18, 6, 18, 122),
                   itemCount: items.length,
-                  separatorBuilder: (_, _) => const SizedBox(height: 12),
+                  separatorBuilder: (_, _) => const SizedBox.shrink(),
                   itemBuilder: (_, i) {
                     final p = MarinaPalette.of(context);
+                    final rtl =
+                        Directionality.of(context) == TextDirection.rtl;
                     return MarinaPressable(
                       onTap: () =>
                           context.push('/products?category=${items[i].id}'),
-                      borderRadius: BorderRadius.circular(22),
+                      borderRadius: BorderRadius.circular(4),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 14,
-                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 26),
                         decoration: BoxDecoration(
-                          color: p.surface,
-                          borderRadius: BorderRadius.circular(22),
-                          border: Border.all(
-                            color: p.line.withValues(alpha: .9),
+                          border: Border(
+                            bottom: BorderSide(color: p.line),
                           ),
-                          boxShadow: p.cardShadow,
                         ),
                         child: Row(
                           children: [
-                            Container(
-                              width: 50,
-                              height: 50,
-                              decoration: BoxDecoration(
-                                color: p.goldSoft,
-                                borderRadius: BorderRadius.circular(17),
-                                border: Border.all(
-                                  color: p.gold.withValues(alpha: .3),
-                                ),
-                              ),
-                              child: Icon(
-                                marinaCategoryIcon(
-                                  items[i].name,
-                                  fallbackIndex: i,
-                                ),
+                            Text(
+                              'N°${(i + 1).toString().padLeft(2, '0')}',
+                              style: TextStyle(
+                                fontFamily: 'Marcellus',
+                                fontSize: 14,
+                                letterSpacing: 1,
+                                height: 1,
                                 color: p.gold,
-                                size: 24,
                               ),
                             ),
-                            const SizedBox(width: 14),
+                            const SizedBox(width: 18),
                             Expanded(
                               child: Text(
                                 items[i].name,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleMedium
-                                    ?.copyWith(fontSize: 16),
+                                style: MarinaType.display(context, size: 24),
                               ),
                             ),
                             Icon(
-                              Icons.chevron_right_rounded,
-                              color: p.muted.withValues(alpha: .7),
+                              rtl
+                                  ? Icons.arrow_back_rounded
+                                  : Icons.arrow_forward_rounded,
+                              size: 17,
+                              color: p.gold,
                             ),
                           ],
                         ),
@@ -1276,6 +1263,13 @@ class _DetailState extends ConsumerState<ProductDetailScreen> {
   String? selectedVariantId;
   int quantity = 1;
   bool adding = false;
+  final PageController _galleryController = PageController();
+
+  @override
+  void dispose() {
+    _galleryController.dispose();
+    super.dispose();
+  }
 
   String? _colorLabel(ProductVariant v) =>
       (v.color?.trim().isNotEmpty == true) ? v.color!.trim() : null;
@@ -1372,7 +1366,10 @@ class _DetailState extends ConsumerState<ProductDetailScreen> {
                           // ── Hero gallery ──
                           Stack(
                             children: [
-                              _ProductGallery(images: product.images),
+                              _ProductGallery(
+                                images: product.images,
+                                controller: _galleryController,
+                              ),
                               SafeArea(
                                 child: Padding(
                                   padding: const EdgeInsets.all(12),
@@ -1450,12 +1447,30 @@ class _DetailState extends ConsumerState<ProductDetailScreen> {
                                     ],
                                     if (product.description.isNotEmpty) ...[
                                       const SizedBox(height: 14),
-                                      Text(
-                                        product.description,
-                                        style: TextStyle(
-                                          height: 1.65,
-                                          fontSize: 13.5,
-                                          color: p.muted,
+                                      Text.rich(
+                                        TextSpan(
+                                          style: TextStyle(
+                                            height: 1.65,
+                                            fontSize: 13.5,
+                                            color: p.muted,
+                                          ),
+                                          children: [
+                                            TextSpan(
+                                              text: product.description
+                                                  .substring(0, 1),
+                                              style: TextStyle(
+                                                fontFamily: 'Marcellus',
+                                                fontFamilyFallback: ['Tajawal'],
+                                                fontSize: 40,
+                                                height: 1,
+                                                color: p.gold,
+                                              ),
+                                            ),
+                                            TextSpan(
+                                              text: product
+                                                  .description.substring(1),
+                                            ),
+                                          ],
                                         ),
                                       ),
                                     ],
@@ -1939,9 +1954,10 @@ class _PerkChip extends StatelessWidget {
 }
 
 class _ProductGallery extends StatefulWidget {
-  const _ProductGallery({required this.images});
+  const _ProductGallery({required this.images, this.controller});
 
   final List<String> images;
+  final PageController? controller;
 
   @override
   State<_ProductGallery> createState() => _ProductGalleryState();
@@ -1971,6 +1987,7 @@ class _ProductGalleryState extends State<_ProductGallery> {
           alignment: Alignment.bottomCenter,
           children: [
             PageView.builder(
+              controller: widget.controller,
               itemCount: widget.images.length,
               onPageChanged: (v) => setState(() => current = v),
               itemBuilder: (_, i) => ColoredBox(
@@ -1981,40 +1998,47 @@ class _ProductGalleryState extends State<_ProductGallery> {
                 ),
               ),
             ),
-            Positioned(
-              bottom: 96,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 7,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: .45),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: .14),
-                  ),
-                ),
+            if (widget.images.length > 1)
+              Positioned(
+                bottom: 18,
+                left: 0,
+                right: 0,
                 child: Row(
-                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: List.generate(
                     widget.images.length,
-                    (i) => AnimatedContainer(
-                      duration: MarinaMotion.fast,
-                      width: i == current ? 18 : 6,
-                      height: 6,
-                      margin: const EdgeInsets.symmetric(horizontal: 3),
-                      decoration: BoxDecoration(
-                        color: i == current
-                            ? MarinaColors.goldBright
-                            : Colors.white38,
-                        borderRadius: BorderRadius.circular(8),
+                    (i) => GestureDetector(
+                      onTap: () => widget.controller?.animateToPage(
+                        i,
+                        duration: const Duration(milliseconds: 340),
+                        curve: Curves.easeOut,
+                      ),
+                      child: AnimatedContainer(
+                        duration: MarinaMotion.fast,
+                        width: i == current ? 46 : 38,
+                        height: 38,
+                        margin: const EdgeInsets.symmetric(horizontal: 4),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(
+                            color: i == current
+                                ? MarinaColors.goldBright
+                                : Colors.white38,
+                            width: 1.4,
+                          ),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(5),
+                          child: MarinaNetworkImage(
+                            url: widget.images[i],
+                            fit: BoxFit.cover,
+                          ),
+                        ),
                       ),
                     ),
                   ),
                 ),
               ),
-            ),
           ],
         ),
       ),
@@ -2099,6 +2123,7 @@ class _CompleteTheLook extends ConsumerWidget {
                         kicker: 'STYLE IT WITH',
                         title: context.tr('completeTheLook'),
                         route: '/products',
+                        plate: '05',
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -2118,7 +2143,7 @@ class _CompleteTheLook extends ConsumerWidget {
                               : wide >= 600
                               ? 196
                               : 170,
-                          child: ProductCard(product: items[i]),
+                          child: ProductCard(product: items[i], plate: i + 1),
                         ),
                       ),
                     ),
