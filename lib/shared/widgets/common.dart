@@ -1,10 +1,12 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/localization/app_localizations.dart';
 import '../../core/network/api_client.dart';
+import '../../core/state/commerce_state.dart';
 import '../../core/theme/marina_theme.dart';
 import '../../features/products/domain/product.dart';
 
@@ -252,6 +254,106 @@ IconData marinaCategoryIcon(String name, {int fallbackIndex = 0}) {
   return fallback[fallbackIndex % fallback.length];
 }
 
+
+/// Cinematic entrance: fades + slides up with a stagger based on [index].
+class FadeSlideIn extends StatefulWidget {
+  const FadeSlideIn({
+    super.key,
+    required this.child,
+    this.index = 0,
+    this.fromTop = false,
+  });
+
+  final Widget child;
+  final int index;
+  final bool fromTop;
+
+  @override
+  State<FadeSlideIn> createState() => _FadeSlideInState();
+}
+
+class _FadeSlideInState extends State<FadeSlideIn>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 560),
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    final i = widget.index;
+    final step = i < 0 ? 0 : (i > 8 ? 8 : i);
+    _controller.forward(
+      delay: Duration(milliseconds: 70 * step),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final curve = CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic);
+    final offset = widget.fromTop ? -18.0 : 26.0;
+    return AnimatedBuilder(
+      animation: curve,
+      builder: (context, child) => Opacity(
+        opacity: curve.value,
+        child: Transform.translate(
+          offset: Offset(0, offset * (1 - curve.value)),
+          child: child,
+        ),
+      ),
+      child: widget.child,
+    );
+  }
+}
+
+/// Luxury press feedback: gentle scale-down while touched.
+class MarinaPressable extends StatefulWidget {
+  const MarinaPressable({
+    super.key,
+    required this.child,
+    required this.onTap,
+    this.borderRadius,
+  });
+
+  final Widget child;
+  final VoidCallback onTap;
+  final BorderRadius? borderRadius;
+
+  @override
+  State<MarinaPressable> createState() => _MarinaPressableState();
+}
+
+class _MarinaPressableState extends State<MarinaPressable> {
+  bool _down = false;
+
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+    onTap: widget.onTap,
+    onTapDown: (_) {
+      if (mounted) setState(() => _down = true);
+    },
+    onTapUp: (_) {
+      if (mounted) setState(() => _down = false);
+    },
+    onTapCancel: () {
+      if (mounted) setState(() => _down = false);
+    },
+    child: AnimatedScale(
+      scale: _down ? .965 : 1,
+      duration: const Duration(milliseconds: 140),
+      curve: Curves.easeOut,
+      child: widget.child,
+    ),
+  );
+}
+
 class EmptyState extends StatelessWidget {
   const EmptyState({
     super.key,
@@ -472,14 +574,40 @@ class ErrorState extends StatelessWidget {
   }
 }
 
-/// Signature product card — image, gold discount badge, serif price.
-class ProductCard extends StatelessWidget {
+/// Fashion product experience card: full-bleed editorial image, refined
+/// typography, gold discount seal and a quick-add jewel over the photo.
+class ProductCard extends ConsumerWidget {
   const ProductCard({super.key, required this.product});
 
   final Product product;
 
+  Future<void> _quickAdd(BuildContext context, WidgetRef ref) async {
+    final variantId = product.variantId;
+    if (variantId == null || variantId.isEmpty) return;
+    if (!await apiClient.hasSession()) {
+      if (context.mounted) context.push('/login');
+      return;
+    }
+    try {
+      await ref.read(cartProvider.notifier).add(variantId);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.tr('addToBag'))),
+        );
+      }
+    } catch (error) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(apiFailureMessage(error, context.tr('retry'))),
+          ),
+        );
+      }
+    }
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final p = MarinaPalette.of(context);
     final compareAtValue = product.compareAtPrice;
     final hasDiscount =
@@ -487,115 +615,141 @@ class ProductCard extends StatelessWidget {
     final compareAt = compareAtValue ?? 0.0;
     final discount =
         hasDiscount ? (((1 - product.price / compareAt) * 100).round()) : 0;
+    final canQuickAdd =
+        product.variantId != null && product.variantId!.isNotEmpty;
 
     return Material(
       color: p.surface,
       clipBehavior: Clip.antiAlias,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(24),
+        side: BorderSide(color: p.line.withValues(alpha: .85)),
+      ),
       child: InkWell(
         onTap: () => context.push('/product/${product.id}', extra: product),
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: p.line.withValues(alpha: .9)),
-          ),
-          padding: const EdgeInsets.all(7),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(17),
-                      child: product.image == null
-                          ? Container(
-                              color: p.surfaceSoft,
-                              child: Icon(
-                                Icons.checkroom_rounded,
-                                size: 46,
-                                color: p.muted.withValues(alpha: .6),
-                              ),
-                            )
-                          : MarinaNetworkImage(
-                              url: product.image!,
-                              width: double.infinity,
-                              fit: BoxFit.cover,
-                            ),
-                    ),
-                    if (hasDiscount)
-                      PositionedDirectional(
-                        top: 8,
-                        start: 8,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  product.image == null
+                      ? ColoredBox(
+                          color: p.surfaceSoft,
+                          child: Icon(
+                            Icons.checkroom_rounded,
+                            size: 44,
+                            color: p.muted.withValues(alpha: .55),
                           ),
-                          decoration: BoxDecoration(
-                            gradient: MarinaGradients.gold,
-                            borderRadius: BorderRadius.circular(9),
-                          ),
-                          child: Text(
-                            '-$discount%',
-                            style: TextStyle(
-                              color: MarinaColors.onGold,
-                              fontSize: 10.5,
-                              fontWeight: FontWeight.w800,
-                              height: 1,
+                        )
+                      : MarinaNetworkImage(
+                          url: product.image!,
+                          fit: BoxFit.cover,
+                        ),
+                  if (hasDiscount)
+                    PositionedDirectional(
+                      top: 10,
+                      start: 10,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 9,
+                          vertical: 5,
+                        ),
+                        decoration: BoxDecoration(
+                          gradient: MarinaGradients.gold,
+                          borderRadius: BorderRadius.circular(10),
+                          boxShadow: [
+                            BoxShadow(
+                              color: MarinaColors.gold.withValues(alpha: .4),
+                              blurRadius: 12,
+                              offset: const Offset(0, 4),
                             ),
+                          ],
+                        ),
+                        child: Text(
+                          '-$discount%',
+                          style: const TextStyle(
+                            color: MarinaColors.onGold,
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w800,
+                            height: 1,
                           ),
                         ),
                       ),
-                  ],
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(8, 10, 8, 6),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      product.name,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        height: 1.3,
-                        color: p.ink,
+                    ),
+                  if (canQuickAdd)
+                    PositionedDirectional(
+                      bottom: 10,
+                      end: 10,
+                      child: GestureDetector(
+                        onTap: () => _quickAdd(context, ref),
+                        child: Container(
+                          width: 36,
+                          height: 36,
+                          decoration: const BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: MarinaGradients.gold,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Color(0x66C29B4C),
+                                blurRadius: 14,
+                                offset: Offset(0, 5),
+                              ),
+                            ],
+                          ),
+                          child: const Icon(
+                            Icons.add_rounded,
+                            size: 20,
+                            color: MarinaColors.onGold,
+                          ),
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 6),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.baseline,
-                      textBaseline: TextBaseline.alphabetic,
-                      children: [
-                        MarinaPrice(value: product.price, large: false),
-                        if (hasDiscount) ...[
-                          const SizedBox(width: 6),
-                          Flexible(
-                            child: Text(
-                              'SAR ${compareAt.toStringAsFixed(0)}',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: p.muted,
-                                decoration: TextDecoration.lineThrough,
-                                decorationColor: p.muted.withValues(alpha: .7),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ],
-                ),
+                ],
               ),
-            ],
-          ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(13, 11, 13, 13),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    product.name,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      height: 1.32,
+                      letterSpacing: .1,
+                      color: p.ink,
+                    ),
+                  ),
+                  const SizedBox(height: 7),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: [
+                      MarinaPrice(value: product.price),
+                      if (hasDiscount) ...[
+                        const Spacer(),
+                        Text(
+                          'SAR ${compareAt.toStringAsFixed(0)}',
+                          maxLines: 1,
+                          style: TextStyle(
+                            fontSize: 10.5,
+                            color: p.muted.withValues(alpha: .85),
+                            decoration: TextDecoration.lineThrough,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );

@@ -351,6 +351,16 @@ const _en = <String, String>{
   'emptyWishlist': 'Your wishlist is empty',
   'sectionPreferences': 'Preferences',
   'sectionSupport': 'Help & information',
+  'discoverCollection': 'Discover the collection',
+  'collections': 'Collections',
+  'collection': 'Collection',
+  'explore': 'Explore',
+  'completeTheLook': 'Complete the look',
+  'freeDelivery': 'Free delivery',
+  'easyReturns': 'Easy returns',
+  'piecesLeft': 'pieces left',
+  'lastPiece': 'Last piece left',
+  'quantity': 'Quantity',
 };
 
 const _ar = <String, String>{
@@ -669,6 +679,16 @@ const _ar = <String, String>{
   'emptyWishlist': 'قائمة مفضلتك فارغة',
   'sectionPreferences': 'التفضيلات',
   'sectionSupport': 'الدعم والمعلومات',
+  'discoverCollection': 'اكتشف المجموعة',
+  'collections': 'المجموعات',
+  'collection': 'مجموعة',
+  'explore': 'استكشف',
+  'completeTheLook': 'أكمل الإطلالة',
+  'freeDelivery': 'توصيل مجاني',
+  'easyReturns': 'إرجاع سهل',
+  'piecesLeft': 'قطعة متوفرة',
+  'lastPiece': 'القطعة الأخيرة',
+  'quantity': 'الكمية',
 };
 
 extension MarinaStrings on BuildContext {

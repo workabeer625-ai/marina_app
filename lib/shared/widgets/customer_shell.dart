@@ -207,15 +207,11 @@ class _DockTab extends StatelessWidget {
         curve: MarinaMotion.curve,
         margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 9),
         decoration: BoxDecoration(
-          color: selected
-              ? (palette.isDark
-                  ? palette.gold.withValues(alpha: .14)
-                  : MarinaColors.navy.withValues(alpha: .07))
-              : Colors.transparent,
+          color: selected ? palette.goldSoft.withValues(alpha: .9) : null,
           borderRadius: BorderRadius.circular(22),
           border: Border.all(
             color: selected
-                ? palette.gold.withValues(alpha: palette.isDark ? .5 : .35)
+                ? palette.gold.withValues(alpha: palette.isDark ? .55 : .45)
                 : Colors.transparent,
             width: 1,
           ),

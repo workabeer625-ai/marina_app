@@ -1,10 +1,28 @@
 # MARINA Design System — "Riviera" 🌊✨
 
-نظام التصميم الجديد لمتجر مارينا — هوية فاخرة موحّدة بوضعين: نهاري وليلي، مع الحفاظ على
-جميع العمليات والمنطق كما هو (نفس الشاشات، نفس المسارات، نفس الـAPI).
+**Fashion Experience, not a product store.** تجربة أزياء رقمية بلهوية مجلات الأزياء العالمية،
+مع الحفاظ على جميع العمليات والمنطق كما هو (نفس الشاشات، نفس المسارات، نفس الـAPI).
 
-The new design language for the MARINA store — one luxurious identity across
-day & night themes. **All business logic, routes and API operations are untouched.**
+A digital fashion experience with a global luxury-house identity.
+**All business logic, routes and API operations are untouched.**
+
+## 🎭 الشخصيتان / Two personalities
+
+- **Light — Luxury Boutique Day**: عاجي دافئ + كريمي + ذهبي شمبانيا، ثلاث طبقات عمق واضحة
+  (خلفية عاجية / أسطح كريمية / بطاقات دافئة) مع ظلال ناعمة دافئة. لا أبيض مسطّح.
+- **Dark — Luxury Night Experience**: كحلي منتصف الليل العميق + ذهبي متوهج، مسرح مسائي سينمائي.
+
+## 🎬 التجربة / Experience
+
+- **الرئيسية**: غلاف مجلة أزياء بملء الشاشة (Hero سينمائي بشعار MARINA COLLECTION وزر
+  Discover the collection)، ثم لوحة تحرير تنزلق فوق الغلاف، بطاقات **Collections** بتصميم
+  مجوهرات ذهبي، أقسام بمداخل متدرجة الظهور (staggered entrances).
+- **بطاقة المنتج**: الصورة بملء البطاقة + ختم خصم ذهبي + **Quick Add** سريع للسلة.
+- **صفحة المنتج**: معرض Hero بملء الشاشة، لوحة معلومات عائمة فوق الصورة، اختيار لون
+  بدوائر حقيقية (من colorHex)، مقاسات بحالة متوفر/غير متوفر، منتقي كمية (− 01 +)،
+  عداد المخزون ("12 pieces left")، مزايا (توصيل مجاني/إرجاع سهل)، و **Complete The Look**.
+- **التنقل**: شريط زجاجي شفاف بحدود ذهبية وجوهرة سلة ذهبية بعدّاد حي.
+- **الحركات**: FadeSlideIn متدرجة لكل قسم، MarinaPressable (ضغط مرن)، انتقالات صفحات ناعمة.
 
 ---
 

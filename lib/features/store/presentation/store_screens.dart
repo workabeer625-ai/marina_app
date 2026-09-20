@@ -40,6 +40,10 @@ CatalogQuery _query(
   sort: sort,
 );
 
+/// ─────────────────────────────────────────────────────────────────────────
+///  HOME — a cinematic fashion magazine cover, not a store listing.
+/// ─────────────────────────────────────────────────────────────────────────
+
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
@@ -58,196 +62,316 @@ class HomeScreen extends ConsumerWidget {
             0;
     final hasUnread =
         notifications.value?.items.any((x) => x.readUtc == null) ?? false;
+    final dark = Theme.of(context).brightness == Brightness.dark;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light,
       child: ColoredBox(
         color: Theme.of(context).scaffoldBackgroundColor,
         child: SafeArea(
-        bottom: false,
-        child: RefreshIndicator(
-          onRefresh: () => ref.refresh(catalogHomeProvider(culture).future),
-          child: CustomScrollView(
-            slivers: [
-              SliverToBoxAdapter(
-                child: Container(
-                  decoration: BoxDecoration(
-                    gradient: MarinaGradients.header(
-                      dark: Theme.of(context).brightness == Brightness.dark,
+          bottom: false,
+          child: RefreshIndicator(
+            onRefresh: () => ref.refresh(catalogHomeProvider(culture).future),
+            child: CustomScrollView(
+              physics: const BouncingScrollPhysics(),
+              slivers: [
+                SliverToBoxAdapter(
+                  child: home.when(
+                    loading: () => SizedBox(
+                      height: MediaQuery.sizeOf(context).height * .82,
+                      child: const LoadingState(),
                     ),
-                    borderRadius: const BorderRadius.vertical(
-                      bottom: Radius.circular(34),
-                    ),
-                  ),
-                  child: Center(
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 1280),
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(18, 14, 18, 26),
-                        child: Column(
-                          children: [
-                            Row(
-                              children: [
-                                const Expanded(
-                                  child: Align(
-                                    alignment: AlignmentDirectional.centerStart,
-                                    child: SizedBox(
-                                      width: 150,
-                                      child: MarinaWordmark(
-                                        dark: false,
-                                        compact: true,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                _ThemeToggleButton(),
-                                const SizedBox(width: 8),
-                                MarinaIconButton(
-                                  icon: Icons.notifications_none_rounded,
-                                  dark: true,
-                                  dot: hasUnread,
-                                  onTap: () => context.push('/notifications'),
-                                ),
-                                const SizedBox(width: 8),
-                                MarinaIconButton(
-                                  icon: Icons.shopping_bag_outlined,
-                                  dark: true,
-                                  badgeCount: bagCount,
-                                  onTap: () => context.push('/cart'),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 24),
-                            Material(
-                              color: Colors.white.withValues(alpha: .07),
-                              borderRadius: BorderRadius.circular(19),
-                              child: InkWell(
-                                borderRadius: BorderRadius.circular(19),
-                                onTap: () => context.push('/search'),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 15,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(19),
-                                    border: Border.all(
-                                      color:
-                                          Colors.white.withValues(alpha: .12),
-                                    ),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      const Icon(
-                                        Icons.search_rounded,
-                                        color: MarinaColors.goldBright,
-                                      ),
-                                      const SizedBox(width: 11),
-                                      Expanded(
-                                        child: Text(
-                                          context.tr('search'),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: const TextStyle(
-                                            color: Color(0xFFB7C9DB),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
+                    error: (e, _) => SizedBox(
+                      height: 420,
+                      child: ErrorState(
+                        message: apiFailureMessage(e, context.tr('retry')),
+                        onRetry: () =>
+                            ref.invalidate(catalogHomeProvider(culture)),
                       ),
                     ),
+                    data: (data) => _MagazineBody(
+                      data: data,
+                      dark: dark,
+                      bagCount: bagCount,
+                      hasUnread: hasUnread,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Full-bleed hero + overlapping editorial sheet.
+class _MagazineBody extends ConsumerWidget {
+  const _MagazineBody({
+    required this.data,
+    required this.dark,
+    required this.bagCount,
+    required this.hasUnread,
+  });
+
+  final CatalogHome data;
+  final bool dark;
+  final int bagCount;
+  final bool hasUnread;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final p = MarinaPalette.of(context);
+    final wide = MediaQuery.sizeOf(context).width;
+    final desktop = wide >= 700;
+
+    return Stack(
+      children: [
+        // ── The cover ──
+        Container(
+          height: desktop ? 560 : 470,
+          decoration: const BoxDecoration(color: MarinaColors.midnight),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              Image.asset(
+                'assets/visuals/home-hero.png',
+                fit: BoxFit.cover,
+                alignment: Alignment.centerRight,
+              ),
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    stops: const [0, .42, .78, 1],
+                    colors: const [
+                      Color(0xD9070C15),
+                      Color(0x33070C15),
+                      Color(0xB8070C15),
+                      Color(0xFF070C15),
+                    ],
                   ),
                 ),
               ),
-              SliverPadding(
-                padding: EdgeInsets.symmetric(
-                  horizontal: _pagePadding(MediaQuery.sizeOf(context).width),
-                ),
-                sliver: SliverList(
-                  delegate: SliverChildListDelegate([
-                    const SizedBox(height: 20),
-                    home.when(
-                      loading: () =>
-                          const SizedBox(height: 520, child: LoadingState()),
-                      error: (e, _) => SizedBox(
-                        height: 360,
-                        child: ErrorState(
-                          message: apiFailureMessage(e, context.tr('retry')),
-                          onRetry: () =>
-                              ref.invalidate(catalogHomeProvider(culture)),
-                        ),
-                      ),
-                      data: (data) => Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+              SafeArea(
+                bottom: false,
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(
+                    _pagePadding(wide),
+                    8,
+                    _pagePadding(wide),
+                    0,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
                         children: [
-                          _Hero(data: data),
-                          const SizedBox(height: 30),
-                          SectionHeading(
-                            title: context.tr('categories'),
-                            route: '/categories',
-                          ),
-                          const SizedBox(height: 14),
-                          SizedBox(
-                            height: 102,
-                            child: ListView.separated(
-                              scrollDirection: Axis.horizontal,
-                              itemCount: data.categories.length,
-                              separatorBuilder: (_, _) =>
-                                  const SizedBox(width: 10),
-                              itemBuilder: (_, i) {
-                                final category = data.categories[i];
-                                return _CategoryChip(
-                                  label: category.name,
-                                  onTap: () => context.push(
-                                    '/products?category=${category.id}',
-                                  ),
-                                  index: i,
-                                );
-                              },
+                          const Expanded(
+                            child: Align(
+                              alignment: AlignmentDirectional.centerStart,
+                              child: SizedBox(
+                                width: 150,
+                                child: MarinaWordmark(
+                                  dark: false,
+                                  compact: true,
+                                ),
+                              ),
                             ),
                           ),
-                          const SizedBox(height: 28),
-                          _ProductRail(
-                            title: context.tr('new'),
-                            route: '/new-arrivals',
-                            items: data.products,
+                          _ThemeToggleButton(),
+                          const SizedBox(width: 8),
+                          MarinaIconButton(
+                            icon: Icons.notifications_none_rounded,
+                            dark: true,
+                            dot: hasUnread,
+                            onTap: () => context.push('/notifications'),
                           ),
-                          const SizedBox(height: 28),
-                          _ProductRail(
-                            title: context.tr('offers'),
-                            route: '/offers',
-                            items: data.products.reversed.toList(),
+                          const SizedBox(width: 8),
+                          MarinaIconButton(
+                            icon: Icons.shopping_bag_outlined,
+                            dark: true,
+                            badgeCount: bagCount,
+                            onTap: () => context.push('/cart'),
                           ),
-                          const SizedBox(height: 28),
-                          _ProductRail(
-                            title: context.tr('bestSellers'),
-                            route: '/products',
-                            items: data.products.skip(2).toList(),
-                          ),
-                          const SizedBox(height: 28),
-                          _ProductRail(
-                            title: context.tr('recommended'),
-                            route: '/products',
-                            items: data.products.skip(4).toList(),
-                          ),
-                          const SizedBox(height: 122),
                         ],
                       ),
-                    ),
-                  ]),
+                      const Spacer(),
+                      Text(
+                        'MARINA COLLECTION',
+                        style: TextStyle(
+                          color: MarinaColors.goldBright,
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing:
+                              MarinaType.isArabic(context) ? 0 : 4.5,
+                          height: 1.2,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      ConstrainedBox(
+                        constraints: BoxConstraints(maxWidth: wide * .82),
+                        child: Text(
+                          data.title,
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                          style: MarinaType.display(
+                            context,
+                            size: desktop ? 44 : 33,
+                            height: 1.14,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                      if (data.subtitle.isNotEmpty) ...[
+                        const SizedBox(height: 12),
+                        Text(
+                          data.subtitle,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: const Color(0xFFC9D3E3),
+                            fontSize: desktop ? 15 : 13.5,
+                            height: 1.5,
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 22),
+                      SizedBox(
+                        width: desktop ? 320 : double.infinity,
+                        child: MarinaGoldButton(
+                          label: context.tr('discoverCollection'),
+                          icon: Icons.arrow_outward_rounded,
+                          height: 54,
+                          onPressed: () => context.push('/products'),
+                        ),
+                      ),
+                      const SizedBox(height: 88),
+                    ],
+                  ),
                 ),
               ),
             ],
           ),
         ),
-      ),
-      ),
+        // ── Editorial sheet sliding over the cover ──
+        Transform.translate(
+          offset: const Offset(0, -30),
+          child: Container(
+            decoration: BoxDecoration(
+              color: p.background,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(32),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: dark ? .45 : .18),
+                  blurRadius: 34,
+                  offset: const Offset(0, -12),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 22),
+                Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: _pagePadding(wide),
+                  ),
+                  child: _SearchPill(),
+                ),
+                const SizedBox(height: 30),
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: _pagePadding(wide)),
+                  child: FadeSlideIn(
+                    index: 0,
+                    child: SectionHeading(
+                      kicker: context.tr('collections').toUpperCase(),
+                      title: context.tr('categories'),
+                      route: '/categories',
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                FadeSlideIn(
+                  index: 1,
+                  child: SizedBox(
+                    height: 226,
+                    child: ListView.separated(
+                      physics: const BouncingScrollPhysics(),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: _pagePadding(wide),
+                      ),
+                      scrollDirection: Axis.horizontal,
+                      itemCount: data.categories.length,
+                      separatorBuilder: (_, _) => const SizedBox(width: 14),
+                      itemBuilder: (_, i) {
+                        final category = data.categories[i];
+                        return _CollectionCard(
+                          name: category.name,
+                          index: i,
+                          onTap: () =>
+                              context.push('/products?category=${category.id}'),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 36),
+                _EditorialRail(
+                  stagger: 2,
+                  title: context.tr('new'),
+                  kicker: 'NEW SEASON',
+                  route: '/new-arrivals',
+                  items: data.products,
+                ),
+                _EditorialRail(
+                  stagger: 3,
+                  title: context.tr('offers'),
+                  kicker: 'UP TO -30%',
+                  route: '/offers',
+                  items: data.products.reversed.toList(),
+                ),
+                _EditorialRail(
+                  stagger: 4,
+                  title: context.tr('bestSellers'),
+                  kicker: 'MOST LOVED',
+                  route: '/products',
+                  items: data.products.skip(2).toList(),
+                ),
+                _EditorialRail(
+                  stagger: 5,
+                  title: context.tr('recommended'),
+                  kicker: 'CURATED FOR YOU',
+                  route: '/products',
+                  items: data.products.skip(4).toList(),
+                ),
+                const SizedBox(height: 40),
+                Center(child: GoldDivider(width: 150)),
+                const SizedBox(height: 18),
+                Center(
+                  child: Text(
+                    'MARINA',
+                    style: TextStyle(
+                      fontFamily: 'Marcellus',
+                      fontFamilyFallback: ['Tajawal'],
+                      fontSize: 15,
+                      letterSpacing: 7,
+                      color: p.muted.withValues(alpha: .8),
+                    ),
+                  ),
+                ),
+                SizedBox(
+                  height: 122,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -256,9 +380,46 @@ double _pagePadding(double width) => width >= 1200
     ? 48
     : width >= 768
     ? 32
-    : 16;
+    : 18;
 
-/// Day / night switch for the home header.
+/// Floating glass search seam between cover and sheet.
+class _SearchPill extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final p = MarinaPalette.of(context);
+    return Material(
+      color: p.surface,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(21),
+        side: BorderSide(color: p.line.withValues(alpha: .9)),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(21),
+        onTap: () => context.push('/search'),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+          child: Row(
+            children: [
+              Icon(Icons.search_rounded, color: p.gold),
+              const SizedBox(width: 11),
+              Expanded(
+                child: Text(
+                  context.tr('search'),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(color: p.muted, fontSize: 14),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Day / night switch for the home cover.
 class _ThemeToggleButton extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -299,256 +460,236 @@ class _ThemeToggleButton extends ConsumerWidget {
   }
 }
 
-class _CategoryChip extends StatelessWidget {
-  const _CategoryChip({
-    required this.label,
+/// Editorial collection card — a door into its own world.
+class _CollectionCard extends StatelessWidget {
+  const _CollectionCard({
+    required this.name,
     required this.onTap,
     required this.index,
   });
 
-  final String label;
+  final String name;
   final VoidCallback onTap;
   final int index;
 
   @override
   Widget build(BuildContext context) {
-    final p = MarinaPalette.of(context);
-    return Material(
-      color: Colors.transparent,
-      child: SizedBox(
-        width: 78,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(20),
-          onTap: onTap,
-          child: Column(
-            children: [
-              Container(
-                width: 60,
-                height: 60,
-                decoration: BoxDecoration(
-                  color: p.isDark ? p.surfaceSoft : Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: p.gold.withValues(alpha: .35)),
-                  boxShadow: p.isDark
-                      ? null
-                      : [
-                          BoxShadow(
-                            color: MarinaColors.goldDeep.withValues(alpha: .1),
-                            blurRadius: 16,
-                            offset: const Offset(0, 8),
-                          ),
-                        ],
-                ),
-                child: Icon(
-                  marinaCategoryIcon(label, fallbackIndex: index),
-                  color: p.gold,
-                  size: 25,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 11.5,
-                  fontWeight: FontWeight.w600,
-                  color: p.ink,
-                ),
-              ),
-            ],
+    final gradients = const [
+      [Color(0xFF1A2542), Color(0xFF0B1322)],
+      [Color(0xFF232C46), Color(0xFF101826)],
+      [Color(0xFF1D2A1F), Color(0xFF0C1410)],
+    ];
+    final pair = gradients[index % gradients.length];
+    final rtl = Directionality.of(context) == TextDirection.rtl;
+    return MarinaPressable(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(28),
+      child: Container(
+        width: 274,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(28),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: pair,
           ),
+          border: Border.all(color: MarinaColors.gold.withValues(alpha: .3)),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x59101B2D),
+              blurRadius: 26,
+              offset: Offset(0, 14),
+            ),
+          ],
+        ),
+        child: Stack(
+          children: [
+            PositionedDirectional(
+              end: -46,
+              top: -46,
+              child: Container(
+                width: 150,
+                height: 150,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: MarinaColors.gold.withValues(alpha: .22),
+                    width: 1.4,
+                  ),
+                ),
+              ),
+            ),
+            PositionedDirectional(
+              end: 18,
+              bottom: -60,
+              child: Container(
+                width: 120,
+                height: 120,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: MarinaColors.gold.withValues(alpha: .14),
+                    width: 1,
+                  ),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(22),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'COLLECTION',
+                    style: TextStyle(
+                      color: MarinaColors.goldBright,
+                      fontSize: 9.5,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: MarinaType.isArabic(context) ? 0 : 3.4,
+                      height: 1.2,
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    name,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: MarinaType.display(
+                      context,
+                      size: 22,
+                      height: 1.22,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Text(
+                        context.tr('explore'),
+                        style: TextStyle(
+                          color: MarinaColors.goldBright,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: MarinaType.isArabic(context) ? 0 : .6,
+                        ),
+                      ),
+                      const SizedBox(width: 7),
+                      Icon(
+                        rtl
+                            ? Icons.arrow_back_rounded
+                            : Icons.arrow_forward_rounded,
+                        size: 15,
+                        color: MarinaColors.goldBright,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
-class _ProductRail extends StatelessWidget {
-  const _ProductRail({
+/// Editorial product rail with kicker header and staggered entrance.
+class _EditorialRail extends StatelessWidget {
+  const _EditorialRail({
+    required this.stagger,
+    required this.kicker,
     required this.title,
     required this.route,
     required this.items,
   });
 
-  final String title, route;
+  final int stagger;
+  final String kicker, title, route;
   final List<Product> items;
 
   @override
-  Widget build(BuildContext context) => Column(
-    children: [
-      SectionHeading(title: title, route: route),
-      const SizedBox(height: 14),
-      if (items.isEmpty)
-        const SizedBox(height: 180, child: EmptyState())
-      else
-        LayoutBuilder(
-          builder: (context, c) {
-            final cardWidth = c.maxWidth >= 1000
-                ? 216.0
-                : c.maxWidth >= 600
-                ? 194.0
-                : 166.0;
-            return SizedBox(
-              height: 300,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemCount: items.take(12).length,
-                separatorBuilder: (_, _) => const SizedBox(width: 12),
-                itemBuilder: (_, i) => SizedBox(
-                  width: cardWidth,
-                  child: ProductCard(product: items[i]),
-                ),
-              ),
-            );
-          },
-        ),
-    ],
-  );
-}
-
-class _Hero extends StatelessWidget {
-  const _Hero({required this.data});
-
-  final CatalogHome data;
-
-  @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, c) {
-        final desktop = c.maxWidth >= 700;
-        return Container(
-          height: desktop ? 370 : 310,
-          decoration: BoxDecoration(
-            color: MarinaColors.midnight,
-            borderRadius: BorderRadius.circular(30),
-            border: Border.all(color: MarinaColors.gold.withValues(alpha: .25)),
-            boxShadow: [
-              BoxShadow(
-                color: MarinaColors.midnight.withValues(alpha: .35),
-                blurRadius: 34,
-                offset: const Offset(0, 16),
+    final wide = MediaQuery.sizeOf(context).width;
+    return FadeSlideIn(
+      index: stagger,
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 36),
+        child: Column(
+          children: [
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: _pagePadding(wide)),
+              child: SectionHeading(
+                kicker: kicker,
+                title: title,
+                route: route,
               ),
-            ],
-          ),
-          clipBehavior: Clip.antiAlias,
-          child: Stack(
-            children: [
-              Positioned.fill(
-                child: Image.asset(
-                  'assets/visuals/home-hero.png',
-                  fit: BoxFit.cover,
-                  alignment: Alignment.centerRight,
-                ),
-              ),
-              Positioned.fill(
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: AlignmentDirectional.centerStart,
-                      end: AlignmentDirectional.centerEnd,
-                      colors: desktop
-                          ? const [
-                              Color(0xFF0A111E),
-                              Color(0xE10A111E),
-                              Color(0x330A111E),
-                            ]
-                          : const [
-                              Color(0xF70A111E),
-                              Color(0x8C0A111E),
-                              Color(0x2E0A111E),
-                            ],
-                    ),
+            ),
+            const SizedBox(height: 16),
+            if (items.isEmpty)
+              const SizedBox(height: 170, child: EmptyState())
+            else
+              SizedBox(
+                height: 294,
+                child: ListView.separated(
+                  physics: const BouncingScrollPhysics(),
+                  padding: EdgeInsets.symmetric(horizontal: _pagePadding(wide)),
+                  scrollDirection: Axis.horizontal,
+                  itemCount: items.take(12).length,
+                  separatorBuilder: (_, _) => const SizedBox(width: 14),
+                  itemBuilder: (_, i) => SizedBox(
+                    width: wide >= 1000
+                        ? 218
+                        : wide >= 600
+                        ? 196
+                        : 170,
+                    child: ProductCard(product: items[i]),
                   ),
                 ),
               ),
-              PositionedDirectional(
-                start: desktop ? 38 : 24,
-                end: desktop ? c.maxWidth * .52 : 24,
-                top: 24,
-                bottom: 24,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'MARINA',
-                      style: TextStyle(
-                        color: MarinaColors.goldBright,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing:
-                            MarinaType.isArabic(context) ? 0 : 4.5,
-                        height: 1.2,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      data.title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: MarinaType.display(
-                        context,
-                        size: desktop ? 36 : 28,
-                        color: Colors.white,
-                      ),
-                    ),
-                    if (data.subtitle.isNotEmpty) ...[
-                      const SizedBox(height: 10),
-                      Text(
-                        data.subtitle,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: Color(0xFFC2D0DF),
-                          fontSize: 14,
-                          height: 1.45,
-                        ),
-                      ),
-                    ],
-                    const SizedBox(height: 22),
-                    MarinaGoldButton(
-                      label: context.tr('shop'),
-                      icon: Icons.arrow_outward_rounded,
-                      height: 50,
-                      onPressed: () => context.push('/products'),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        );
-      },
+          ],
+        ),
+      ),
     );
   }
 }
 
 class SectionHeading extends StatelessWidget {
-  const SectionHeading({super.key, required this.title, required this.route});
+  const SectionHeading({
+    super.key,
+    required this.kicker,
+    required this.title,
+    required this.route,
+  });
 
-  final String title, route;
+  final String kicker, title, route;
 
   @override
   Widget build(BuildContext context) {
+    final p = MarinaPalette.of(context);
     final rtl = Directionality.of(context) == TextDirection.rtl;
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        Container(
-          width: 3.5,
-          height: 18,
-          margin: const EdgeInsetsDirectional.only(end: 10),
-          decoration: BoxDecoration(
-            gradient: MarinaGradients.gold,
-            borderRadius: BorderRadius.circular(3),
-          ),
-        ),
         Expanded(
-          child: Text(
-            title,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.titleLarge,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                kicker,
+                style: MarinaType.kicker(
+                  context,
+                  color: p.gold,
+                  size: 10,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: MarinaType.display(context, size: 22),
+              ),
+            ],
           ),
         ),
         TextButton.icon(
@@ -571,6 +712,10 @@ class SectionHeading extends StatelessWidget {
     );
   }
 }
+
+/// ─────────────────────────────────────────────────────────────────────────
+///  CATALOG / BRANDS / CATEGORIES / SEARCH  (same functionality, styled)
+/// ─────────────────────────────────────────────────────────────────────────
 
 class CatalogScreen extends ConsumerStatefulWidget {
   const CatalogScreen({
@@ -622,7 +767,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
     var title = context.tr(widget.titleKey);
     if (brandId != null) {
       final name = ref
-          .watch(brandsProvider(Localizations.localeOf(context).languageCode))
+          .watch(brandsProvider(culture))
           .value
           ?.where((x) => x.id == brandId)
           .firstOrNull
@@ -639,6 +784,17 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
     }
     return MarinaPage(
       title: title,
+      titleWidget: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            context.tr('collection').toUpperCase(),
+            style: MarinaType.kicker(context, size: 9.5),
+          ),
+          const SizedBox(height: 2),
+          Text(title, style: MarinaType.display(context, size: 20)),
+        ],
+      ),
       actions: [
         PopupMenuButton<String>(
           initialValue: sort,
@@ -685,7 +841,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                         ? 3
                         : 2;
                     return GridView.builder(
-                      padding: const EdgeInsets.all(18),
+                      padding: const EdgeInsets.fromLTRB(18, 6, 18, 122),
                       gridDelegate:
                           SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: columns,
@@ -895,7 +1051,7 @@ class BrandsScreen extends ConsumerWidget {
             : RefreshIndicator(
                 onRefresh: () => ref.refresh(brandsProvider(culture).future),
                 child: GridView.builder(
-                  padding: const EdgeInsets.all(18),
+                  padding: const EdgeInsets.fromLTRB(18, 6, 18, 122),
                   gridDelegate:
                       const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
@@ -906,36 +1062,34 @@ class BrandsScreen extends ConsumerWidget {
                   itemCount: items.length,
                   itemBuilder: (_, index) {
                     final brand = items[index];
+                    final p = MarinaPalette.of(context);
                     return Material(
-                      color: Theme.of(context).colorScheme.surface,
-                      borderRadius: BorderRadius.circular(18),
+                      color: p.surface,
                       clipBehavior: Clip.antiAlias,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                        side: BorderSide(
+                          color: p.line.withValues(alpha: .9),
+                        ),
+                      ),
                       child: InkWell(
                         onTap: () =>
                             context.push('/products?brand=${brand.id}'),
-                        child: Container(
+                        child: Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 14),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(18),
-                            border: Border.all(
-                              color: MarinaPalette.of(context)
-                                  .line
-                                  .withValues(alpha: .9),
-                            ),
-                          ),
                           child: Row(
                             children: [
                               Container(
                                 width: 34,
                                 height: 34,
                                 decoration: BoxDecoration(
-                                  color: MarinaPalette.of(context).goldSoft,
+                                  color: p.goldSoft,
                                   shape: BoxShape.circle,
                                 ),
                                 child: Icon(
                                   Icons.storefront_outlined,
                                   size: 17,
-                                  color: MarinaPalette.of(context).gold,
+                                  color: p.gold,
                                 ),
                               ),
                               const SizedBox(width: 10),
@@ -947,14 +1101,14 @@ class BrandsScreen extends ConsumerWidget {
                                   style: TextStyle(
                                     fontWeight: FontWeight.w700,
                                     fontSize: 13.5,
-                                    color: MarinaPalette.of(context).ink,
+                                    color: p.ink,
                                   ),
                                 ),
                               ),
                               Icon(
                                 Icons.chevron_right_rounded,
                                 size: 18,
-                                color: MarinaPalette.of(context).muted,
+                                color: p.muted,
                               ),
                             ],
                           ),
@@ -989,66 +1143,64 @@ class CategoriesScreen extends ConsumerWidget {
                 onRefresh: () =>
                     ref.refresh(categoriesProvider(culture).future),
                 child: ListView.separated(
-                  padding: const EdgeInsets.fromLTRB(18, 18, 18, 122),
+                  padding: const EdgeInsets.fromLTRB(18, 6, 18, 122),
                   itemCount: items.length,
                   separatorBuilder: (_, _) => const SizedBox(height: 12),
                   itemBuilder: (_, i) {
                     final p = MarinaPalette.of(context);
-                    return Material(
-                      color: p.surface,
-                      borderRadius: BorderRadius.circular(20),
-                      clipBehavior: Clip.antiAlias,
-                      child: InkWell(
-                        onTap: () =>
-                            context.push('/products?category=${items[i].id}'),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 14,
+                    return MarinaPressable(
+                      onTap: () =>
+                          context.push('/products?category=${items[i].id}'),
+                      borderRadius: BorderRadius.circular(22),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 14,
+                        ),
+                        decoration: BoxDecoration(
+                          color: p.surface,
+                          borderRadius: BorderRadius.circular(22),
+                          border: Border.all(
+                            color: p.line.withValues(alpha: .9),
                           ),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: p.line.withValues(alpha: .9),
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 50,
-                                height: 50,
-                                decoration: BoxDecoration(
-                                  color: p.goldSoft,
-                                  borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(
-                                    color: p.gold.withValues(alpha: .25),
-                                  ),
-                                ),
-                                child: Icon(
-                                  marinaCategoryIcon(
-                                    items[i].name,
-                                    fallbackIndex: i,
-                                  ),
-                                  color: p.gold,
-                                  size: 24,
+                          boxShadow: p.cardShadow,
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 50,
+                              height: 50,
+                              decoration: BoxDecoration(
+                                color: p.goldSoft,
+                                borderRadius: BorderRadius.circular(17),
+                                border: Border.all(
+                                  color: p.gold.withValues(alpha: .3),
                                 ),
                               ),
-                              const SizedBox(width: 14),
-                              Expanded(
-                                child: Text(
+                              child: Icon(
+                                marinaCategoryIcon(
                                   items[i].name,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .titleMedium
-                                      ?.copyWith(fontSize: 16),
+                                  fallbackIndex: i,
                                 ),
+                                color: p.gold,
+                                size: 24,
                               ),
-                              Icon(
-                                Icons.chevron_right_rounded,
-                                color: p.muted.withValues(alpha: .7),
+                            ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Text(
+                                items[i].name,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleMedium
+                                    ?.copyWith(fontSize: 16),
                               ),
-                            ],
-                          ),
+                            ),
+                            Icon(
+                              Icons.chevron_right_rounded,
+                              color: p.muted.withValues(alpha: .7),
+                            ),
+                          ],
                         ),
                       ),
                     );
@@ -1105,6 +1257,10 @@ class _SearchState extends State<SearchScreen> {
   }
 }
 
+/// ─────────────────────────────────────────────────────────────────────────
+///  PRODUCT DETAILS — the editorial lookbook page.
+/// ─────────────────────────────────────────────────────────────────────────
+
 class ProductDetailScreen extends ConsumerStatefulWidget {
   const ProductDetailScreen({super.key, required this.id, this.product});
 
@@ -1116,8 +1272,60 @@ class ProductDetailScreen extends ConsumerStatefulWidget {
 }
 
 class _DetailState extends ConsumerState<ProductDetailScreen> {
+  String? selectedColor;
   String? selectedVariantId;
+  int quantity = 1;
   bool adding = false;
+
+  String? _colorLabel(ProductVariant v) =>
+      (v.color?.trim().isNotEmpty == true) ? v.color!.trim() : null;
+
+  String? _sizeLabel(ProductVariant v) =>
+      (v.size?.trim().isNotEmpty == true) ? v.size!.trim() : null;
+
+  List<String> _colorsOf(ProductDetails product) {
+    final out = <String>[];
+    for (final v in product.variants) {
+      final c = _colorLabel(v);
+      if (c != null && !out.contains(c)) out.add(c);
+    }
+    return out;
+  }
+
+  List<ProductVariant> _variantsOf(ProductDetails product, String? color) =>
+      color == null
+          ? product.variants
+          : product.variants
+              .where((v) => _colorLabel(v) == color)
+              .toList();
+
+  List<String> _sizesOf(ProductDetails product, String? color) {
+    final out = <String>[];
+    for (final v in _variantsOf(product, color)) {
+      final sz = _sizeLabel(v);
+      if (sz != null && !out.contains(sz)) out.add(sz);
+    }
+    return out;
+  }
+
+  bool _sizeAvailable(ProductDetails product, String size) =>
+      _variantsOf(product, selectedColor)
+          .any((v) => _sizeLabel(v) == size && v.available);
+
+  ProductVariant? _variantFor(ProductDetails product, String size) =>
+      _variantsOf(product, selectedColor)
+          .where((v) => _sizeLabel(v) == size && v.available)
+          .firstOrNull;
+
+  ProductVariant? _selected(ProductDetails product) {
+    final byId = product.variants
+        .where((v) => v.id == selectedVariantId)
+        .firstOrNull;
+    if (byId != null) return byId;
+    final available =
+        _variantsOf(product, selectedColor).where((v) => v.available).toList();
+    return available.firstOrNull ?? product.variants.firstOrNull;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1137,181 +1345,401 @@ class _DetailState extends ConsumerState<ProductDetailScreen> {
         ),
       ),
       data: (product) {
-        final available = product.variants.where((x) => x.available).toList();
-        final selected =
-            available.where((x) => x.id == selectedVariantId).firstOrNull ??
-            available.firstOrNull;
         final p = MarinaPalette.of(context);
+        final colors = _colorsOf(product);
+        if (selectedColor == null && colors.isNotEmpty) {
+          selectedColor = colors.first;
+        }
+        final sizes = _sizesOf(product, selectedColor);
+        final selected = _selected(product);
+        final wide = MediaQuery.sizeOf(context).width;
+        final rtl = Directionality.of(context) == TextDirection.rtl;
+
         return Scaffold(
           backgroundColor: p.background,
           body: SafeArea(
             bottom: false,
             child: Center(
               child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 980),
+                constraints: const BoxConstraints(maxWidth: 720),
                 child: Column(
                   children: [
                     Expanded(
                       child: ListView(
-                        padding: const EdgeInsets.fromLTRB(16, 10, 16, 24),
+                        physics: const BouncingScrollPhysics(),
+                        padding: const EdgeInsets.only(bottom: 10),
                         children: [
+                          // ── Hero gallery ──
                           Stack(
                             children: [
                               _ProductGallery(images: product.images),
-                              PositionedDirectional(
-                                top: 10,
-                                start: 10,
-                                child: MarinaIconButton(
-                                  icon: Icons.arrow_back_ios_new_rounded,
-                                  dark: true,
-                                  onTap: () => context.pop(),
+                              SafeArea(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(12),
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      MarinaIconButton(
+                                        icon: rtl
+                                            ? Icons.arrow_forward_ios_rounded
+                                            : Icons.arrow_back_ios_new_rounded,
+                                        dark: true,
+                                        onTap: () => context.canPop()
+                                            ? context.pop()
+                                            : context.go('/home'),
+                                      ),
+                                      _FavoriteButton(productId: product.id),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                              PositionedDirectional(
-                                top: 10,
-                                end: 10,
-                                child: _FavoriteButton(productId: product.id),
                               ),
                             ],
                           ),
-                          const SizedBox(height: 20),
-                          MarinaSectionCard(
-                            padding: const EdgeInsets.all(20),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  product.name,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .headlineMedium,
-                                ),
-                                if (selected != null) ...[
-                                  const SizedBox(height: 10),
-                                  Row(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.baseline,
-                                    textBaseline: TextBaseline.alphabetic,
-                                    children: [
-                                      MarinaPrice(
-                                        value: selected.price,
-                                        large: true,
-                                      ),
-                                      if (selected.compareAtPrice != null &&
-                                          selected.compareAtPrice! >
-                                              selected.price) ...[
-                                        const SizedBox(width: 10),
-                                        Text(
-                                          'SAR ${selected.compareAtPrice!.toStringAsFixed(2)}',
-                                          style: TextStyle(
-                                            color: p.muted,
-                                            fontSize: 14,
-                                            decoration:
-                                                TextDecoration.lineThrough,
-                                          ),
-                                        ),
-                                      ],
-                                    ],
-                                  ),
-                                ],
-                                if (product.description.isNotEmpty) ...[
-                                  const SizedBox(height: 14),
-                                  Text(
-                                    product.description,
-                                    style: TextStyle(
-                                      height: 1.6,
-                                      fontSize: 14,
-                                      color: p.muted,
+                          // ── Floating lookbook panel ──
+                          Transform.translate(
+                            offset: const Offset(0, -34),
+                            child: Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 16),
+                              child: MarinaSectionCard(
+                                padding: const EdgeInsets.all(22),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'MARINA',
+                                      style: MarinaType.kicker(context, size: 10),
                                     ),
-                                  ),
-                                ],
-                                const SizedBox(height: 22),
-                                Text(
-                                  context.tr('chooseVariant').toUpperCase(),
-                                  style: MarinaType.kicker(context),
-                                ),
-                                const SizedBox(height: 12),
-                                if (product.variants.isEmpty)
-                                  Text(context.tr('outOfStock'))
-                                else
-                                  Wrap(
-                                    spacing: 8,
-                                    runSpacing: 8,
-                                    children:
-                                        product.variants.map((variant) {
-                                      final colorHex = int.tryParse(
-                                        'FF${variant.colorHex?.replaceAll('#', '') ?? ''}',
-                                        radix: 16,
-                                      );
-                                      final swatch = (colorHex != null &&
-                                              variant.colorHex?.isNotEmpty ==
-                                                  true)
-                                          ? Color(colorHex)
-                                          : null;
-                                      final label = [
-                                        variant.color,
-                                        variant.size,
-                                      ]
-                                          .whereType<String>()
-                                          .where((x) => x.isNotEmpty)
-                                          .join(' • ');
-                                      final isSelected =
-                                          selected?.id == variant.id;
-                                      return ChoiceChip(
-                                        label: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            if (swatch != null) ...[
-                                              Container(
-                                                width: 13,
-                                                height: 13,
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      product.name,
+                                      style: MarinaType.display(
+                                        context,
+                                        size: wide >= 600 ? 27 : 23,
+                                        height: 1.24,
+                                      ),
+                                    ),
+                                    if (selected != null) ...[
+                                      const SizedBox(height: 14),
+                                      Row(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.baseline,
+                                        textBaseline: TextBaseline.alphabetic,
+                                        children: [
+                                          MarinaPrice(
+                                            value: selected.price,
+                                            large: true,
+                                          ),
+                                          if (selected.compareAtPrice != null &&
+                                              selected.compareAtPrice! >
+                                                  selected.price) ...[
+                                            const SizedBox(width: 10),
+                                            Text(
+                                              'SAR ${selected.compareAtPrice!.toStringAsFixed(2)}',
+                                              style: TextStyle(
+                                                color: p.muted,
+                                                fontSize: 14,
+                                                decoration:
+                                                    TextDecoration.lineThrough,
+                                              ),
+                                            ),
+                                          ],
+                                        ],
+                                      ),
+                                    ],
+                                    if (product.description.isNotEmpty) ...[
+                                      const SizedBox(height: 14),
+                                      Text(
+                                        product.description,
+                                        style: TextStyle(
+                                          height: 1.65,
+                                          fontSize: 13.5,
+                                          color: p.muted,
+                                        ),
+                                      ),
+                                    ],
+                                    // ── Color experience ──
+                                    if (colors.isNotEmpty) ...[
+                                      const SizedBox(height: 24),
+                                      _SelectorLabel(
+                                        label: context.tr('color'),
+                                        value: selectedColor,
+                                      ),
+                                      const SizedBox(height: 12),
+                                      Wrap(
+                                        spacing: 12,
+                                        runSpacing: 12,
+                                        children:
+                                            colors.map((colorName) {
+                                          final variantsOfColor =
+                                              _variantsOf(product, colorName);
+                                          final anyAvailable = variantsOfColor
+                                              .any((v) => v.available);
+                                          final hex = variantsOfColor
+                                              .map((v) => v.colorHex)
+                                              .firstWhere(
+                                                (h) =>
+                                                    h?.isNotEmpty == true,
+                                                orElse: () => null,
+                                              );
+                                          final parsed = int.tryParse(
+                                            'FF${hex?.replaceAll('#', '') ?? ''}',
+                                            radix: 16,
+                                          );
+                                          final swatchColor = parsed != null
+                                              ? Color(parsed)
+                                              : p.surfaceSoft;
+                                          final isSelected =
+                                              selectedColor == colorName;
+                                          return MarinaPressable(
+                                            onTap: anyAvailable
+                                                ? () => setState(() {
+                                                    selectedColor = colorName;
+                                                    selectedVariantId = null;
+                                                    quantity = 1;
+                                                  })
+                                                : () {},
+                                            borderRadius:
+                                                BorderRadius.circular(24),
+                                            child: Opacity(
+                                              opacity: anyAvailable ? 1 : .35,
+                                              child: Container(
+                                                width: 46,
+                                                height: 46,
                                                 decoration: BoxDecoration(
-                                                  color: swatch,
+                                                  color: swatchColor,
                                                   shape: BoxShape.circle,
                                                   border: Border.all(
-                                                    color: p.line,
+                                                    color: isSelected
+                                                        ? p.gold
+                                                        : p.line,
+                                                    width: isSelected ? 2.4 : 1,
+                                                  ),
+                                                  boxShadow: isSelected
+                                                      ? [
+                                                          BoxShadow(
+                                                            color: p.gold
+                                                                .withValues(
+                                                                    alpha: .35),
+                                                            blurRadius: 12,
+                                                          ),
+                                                        ]
+                                                      : null,
+                                                ),
+                                                child: isSelected
+                                                    ? const Icon(
+                                                        Icons.check_rounded,
+                                                        size: 18,
+                                                        color: Colors.white,
+                                                      )
+                                                    : null,
+                                              ),
+                                            ),
+                                          );
+                                        }).toList(),
+                                      ),
+                                    ],
+                                    // ── Size experience ──
+                                    if (sizes.isNotEmpty) ...[
+                                      const SizedBox(height: 24),
+                                      _SelectorLabel(
+                                        label: context.tr('size'),
+                                        value: null,
+                                      ),
+                                      const SizedBox(height: 12),
+                                      Wrap(
+                                        spacing: 9,
+                                        runSpacing: 9,
+                                        children: sizes.map((size) {
+                                          final available =
+                                              _sizeAvailable(product, size);
+                                          final isSelected =
+                                              selected?._sizeOf == size;
+                                          return MarinaPressable(
+                                            onTap: available
+                                                ? () => setState(() {
+                                                    final v = _variantFor(
+                                                        product, size);
+                                                    if (v != null) {
+                                                      selectedVariantId = v.id;
+                                                    }
+                                                  })
+                                                : () {},
+                                            borderRadius:
+                                                BorderRadius.circular(15),
+                                            child: Opacity(
+                                              opacity: available ? 1 : .38,
+                                              child: Container(
+                                                padding: const EdgeInsets
+                                                    .symmetric(
+                                                  horizontal: 18,
+                                                  vertical: 12,
+                                                ),
+                                                decoration: BoxDecoration(
+                                                  color: isSelected
+                                                      ? p.gold
+                                                      : p.background,
+                                                  borderRadius:
+                                                      BorderRadius.circular(15),
+                                                  border: Border.all(
+                                                    color: isSelected
+                                                        ? p.gold
+                                                        : p.line,
+                                                    width:
+                                                        isSelected ? 1.4 : 1,
+                                                  ),
+                                                ),
+                                                child: Text(
+                                                  size,
+                                                  style: TextStyle(
+                                                    fontSize: 13.5,
+                                                    fontWeight: FontWeight.w800,
+                                                    color: isSelected
+                                                        ? p.onGold
+                                                        : p.ink,
+                                                    decoration: available
+                                                        ? null
+                                                        : TextDecoration
+                                                            .lineThrough,
                                                   ),
                                                 ),
                                               ),
-                                              const SizedBox(width: 7),
-                                            ],
-                                            Text(label.isEmpty
-                                                ? variant.sku
-                                                : label),
+                                            ),
+                                          );
+                                        }).toList(),
+                                      ),
+                                    ],
+                                    // ── Quantity ──
+                                    if (selected != null &&
+                                        selected.available) ...[
+                                      const SizedBox(height: 24),
+                                      _SelectorLabel(
+                                        label: context.tr('quantity'),
+                                        value: null,
+                                      ),
+                                      const SizedBox(height: 12),
+                                      Container(
+                                        decoration: BoxDecoration(
+                                          color: p.background,
+                                          borderRadius:
+                                              BorderRadius.circular(17),
+                                          border: Border.all(color: p.line),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            _StepButton(
+                                              icon: Icons.remove_rounded,
+                                              onTap: quantity > 1
+                                                  ? () => setState(
+                                                      () => quantity--)
+                                                  : null,
+                                            ),
+                                            Padding(
+                                              padding: const EdgeInsets
+                                                  .symmetric(horizontal: 18),
+                                              child: Text(
+                                                quantity
+                                                    .toString()
+                                                    .padLeft(2, '0'),
+                                                style: TextStyle(
+                                                  fontWeight: FontWeight.w800,
+                                                  fontSize: 15,
+                                                  letterSpacing: 1,
+                                                  color: p.ink,
+                                                  fontFeatures: const [
+                                                    FontFeature.tabularFigures()
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                            _StepButton(
+                                              icon: Icons.add_rounded,
+                                              onTap:
+                                                  quantity <
+                                                          (selected
+                                                                  .availableQuantity)
+                                                      ? () => setState(
+                                                          () => quantity++)
+                                                      : null,
+                                            ),
                                           ],
                                         ),
-                                        selected: isSelected,
-                                        onSelected: variant.available
-                                            ? (_) => setState(
-                                                () => selectedVariantId =
-                                                    variant.id,
-                                              )
-                                            : null,
-                                        showCheckmark: false,
-                                        labelPadding:
-                                            const EdgeInsetsDirectional.only(
-                                          start: 12,
-                                          end: 14,
+                                      ),
+                                      const SizedBox(height: 14),
+                                      Row(
+                                        children: [
+                                          Container(
+                                            width: 7,
+                                            height: 7,
+                                            decoration: BoxDecoration(
+                                              shape: BoxShape.circle,
+                                              color: selected.availableQuantity <=
+                                                      5
+                                                  ? MarinaColors.danger
+                                                  : MarinaColors.success,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Text(
+                                            selected.availableQuantity <= 0
+                                                ? context.tr('outOfStock')
+                                                : selected.availableQuantity ==
+                                                        1
+                                                ? context.tr('lastPiece')
+                                                : '${selected.availableQuantity} ${context.tr('piecesLeft')}',
+                                            style: TextStyle(
+                                              fontSize: 12.5,
+                                              fontWeight: FontWeight.w700,
+                                              color: p.muted,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                    // ── Perks ──
+                                    const SizedBox(height: 22),
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: _PerkChip(
+                                            icon:
+                                                Icons.local_shipping_outlined,
+                                            label:
+                                                context.tr('freeDelivery'),
+                                          ),
                                         ),
-                                      );
-                                    }).toList(),
-                                  ),
-                              ],
+                                        const SizedBox(width: 10),
+                                        Expanded(
+                                          child: _PerkChip(
+                                            icon:
+                                                Icons.assignment_return_outlined,
+                                            label: context.tr('easyReturns'),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ),
                           ),
-                          const SizedBox(height: 14),
-                          SettingsTile(
-                            icon: Icons.reviews_outlined,
-                            label: context.tr('reviews'),
-                            route: '/product/${product.id}/reviews',
+                          const SizedBox(height: 8),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: SettingsTile(
+                              icon: Icons.reviews_outlined,
+                              label: context.tr('reviews'),
+                              route: '/product/${product.id}/reviews',
+                            ),
                           ),
-                          _RelatedProducts(
-                            productId: product.id,
-                            culture: culture,
-                          ),
+                          _CompleteTheLook(productId: product.id),
+                          const SizedBox(height: 16),
                         ],
                       ),
                     ),
+                    // ── Sticky purchase bar ──
                     Container(
                       padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
                       decoration: BoxDecoration(
@@ -1322,33 +1750,50 @@ class _DetailState extends ConsumerState<ProductDetailScreen> {
                         top: false,
                         child: Row(
                           children: [
-                            if (selected != null) ...[
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  MarinaPrice(value: selected.price, large: true),
-                                ],
-                              ),
-                              const SizedBox(width: 16),
-                            ],
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                if (quantity > 1)
+                                  Text(
+                                    'x${quantity.toString().padLeft(2, '0')}',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w800,
+                                      color: p.gold,
+                                    ),
+                                  ),
+                                MarinaPrice(
+                                  value: selected == null
+                                      ? 0
+                                      : selected.price * quantity,
+                                  large: true,
+                                ),
+                              ],
+                            ),
+                            const SizedBox(width: 16),
                             Expanded(
                               child: MarinaGoldButton(
-                                label: selected == null
+                                label: selected == null || !selected.available
                                     ? context.tr('outOfStock')
                                     : context.tr('addToBag'),
                                 icon: Icons.add_shopping_cart_rounded,
                                 busy: adding,
-                                onPressed:
-                                    selected == null || adding ? null : () async {
+                                onPressed: selected == null ||
+                                        !selected.available ||
+                                        adding
+                                    ? null
+                                    : () async {
                                   if (!await apiClient.hasSession()) {
-                                    if (context.mounted) context.push('/login');
+                                    if (context.mounted) {
+                                      context.push('/login');
+                                    }
                                     return;
                                   }
                                   setState(() => adding = true);
                                   try {
                                     await ref
                                         .read(cartProvider.notifier)
-                                        .add(selected.id);
+                                        .add(selected.id, quantity: quantity);
                                     if (context.mounted) {
                                       ScaffoldMessenger.of(context)
                                           .showSnackBar(
@@ -1373,7 +1818,9 @@ class _DetailState extends ConsumerState<ProductDetailScreen> {
                                       );
                                     }
                                   } finally {
-                                    if (mounted) setState(() => adding = false);
+                                    if (mounted) {
+                                      setState(() => adding = false);
+                                    }
                                   }
                                 },
                               ),
@@ -1389,6 +1836,102 @@ class _DetailState extends ConsumerState<ProductDetailScreen> {
           ),
         );
       },
+    );
+  }
+}
+
+extension _VariantSizeLabel on ProductVariant {
+  String? get _sizeOf => (size?.trim().isNotEmpty == true) ? size!.trim() : null;
+}
+
+class _SelectorLabel extends StatelessWidget {
+  const _SelectorLabel({required this.label, this.value});
+
+  final String label;
+  final String? value;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = MarinaPalette.of(context);
+    return Row(
+      children: [
+        Text(
+          label.toUpperCase(),
+          style: MarinaType.kicker(context, size: 10.5),
+        ),
+        if (value != null) ...[
+          const SizedBox(width: 10),
+          Text(
+            value!,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w800,
+              color: p.ink,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _StepButton extends StatelessWidget {
+  const _StepButton({required this.icon, required this.onTap});
+
+  final IconData icon;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) => InkWell(
+    onTap: onTap,
+    borderRadius: BorderRadius.circular(17),
+    child: Padding(
+      padding: const EdgeInsets.all(11),
+      child: Icon(
+        icon,
+        size: 17,
+        color: onTap == null
+            ? MarinaPalette.of(context).muted.withValues(alpha: .5)
+            : MarinaPalette.of(context).gold,
+      ),
+    ),
+  );
+}
+
+class _PerkChip extends StatelessWidget {
+  const _PerkChip({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = MarinaPalette.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+      decoration: BoxDecoration(
+        color: p.goldSoft.withValues(alpha: p.isDark ? .8 : .6),
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(color: p.gold.withValues(alpha: .3)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.check_rounded, size: 15, color: p.gold),
+          const SizedBox(width: 7),
+          Expanded(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+                color: p.isDark ? p.gold : p.ink,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -1410,75 +1953,67 @@ class _ProductGalleryState extends State<_ProductGallery> {
     final p = MarinaPalette.of(context);
     if (widget.images.isEmpty) {
       return Container(
-        height: 390,
+        height: 420,
         alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: p.surface,
-          borderRadius: BorderRadius.circular(28),
-          border: Border.all(color: p.line),
-        ),
+        decoration: const BoxDecoration(color: MarinaColors.midnight),
         child: Icon(
           Icons.checkroom_rounded,
           size: 72,
-          color: p.muted.withValues(alpha: .5),
+          color: Colors.white24,
         ),
       );
     }
     return LayoutBuilder(
       builder: (context, c) => SizedBox(
-        height: (c.maxWidth * .92).clamp(330.0, 520.0),
+        height: (c.maxWidth * 1.08).clamp(420.0, 620.0),
         child: Stack(
           alignment: Alignment.bottomCenter,
           children: [
             PageView.builder(
               itemCount: widget.images.length,
               onPageChanged: (v) => setState(() => current = v),
-              itemBuilder: (_, i) => ClipRRect(
-                borderRadius: BorderRadius.circular(28),
-                child: ColoredBox(
-                  color: p.isDark ? p.surfaceSoft : MarinaColors.sand,
-                  child: MarinaNetworkImage(
-                    url: widget.images[i],
-                    fit: BoxFit.contain,
-                  ),
+              itemBuilder: (_, i) => ColoredBox(
+                color: MarinaColors.midnight,
+                child: MarinaNetworkImage(
+                  url: widget.images[i],
+                  fit: BoxFit.cover,
                 ),
               ),
             ),
-            if (widget.images.length > 1)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 16),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 7,
+            Positioned(
+              bottom: 96,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 7,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: .45),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: .14),
                   ),
-                  decoration: BoxDecoration(
-                    color: MarinaColors.midnight.withValues(alpha: .8),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: .14),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: List.generate(
-                      widget.images.length,
-                      (i) => AnimatedContainer(
-                        duration: MarinaMotion.fast,
-                        width: i == current ? 18 : 6,
-                        height: 6,
-                        margin: const EdgeInsets.symmetric(horizontal: 3),
-                        decoration: BoxDecoration(
-                          color: i == current
-                              ? MarinaColors.goldBright
-                              : Colors.white38,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: List.generate(
+                    widget.images.length,
+                    (i) => AnimatedContainer(
+                      duration: MarinaMotion.fast,
+                      width: i == current ? 18 : 6,
+                      height: 6,
+                      margin: const EdgeInsets.symmetric(horizontal: 3),
+                      decoration: BoxDecoration(
+                        color: i == current
+                            ? MarinaColors.goldBright
+                            : Colors.white38,
+                        borderRadius: BorderRadius.circular(8),
                       ),
                     ),
                   ),
                 ),
               ),
+            ),
           ],
         ),
       ),
@@ -1533,58 +2068,62 @@ class _FavoriteButton extends ConsumerWidget {
   }
 }
 
-class _RelatedProducts extends ConsumerWidget {
-  const _RelatedProducts({required this.productId, required this.culture});
+class _CompleteTheLook extends ConsumerWidget {
+  const _CompleteTheLook({required this.productId});
 
-  final String productId, culture;
+  final String productId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final culture = Localizations.localeOf(context).languageCode;
     final related = ref.watch(
       relatedProductsProvider((id: productId, culture: culture)),
     );
+    final wide = MediaQuery.sizeOf(context).width;
     return related.when(
       loading: () => const SizedBox.shrink(),
       error: (_, _) => const SizedBox.shrink(),
       data: (items) => items.isEmpty
           ? const SizedBox.shrink()
-          : Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 24),
-                Row(
+          : FadeSlideIn(
+              index: 1,
+              child: Padding(
+                padding: const EdgeInsets.only(top: 26),
+                child: Column(
                   children: [
-                    Container(
-                      width: 3.5,
-                      height: 18,
-                      margin: const EdgeInsetsDirectional.only(end: 10),
-                      decoration: BoxDecoration(
-                        gradient: MarinaGradients.gold,
-                        borderRadius: BorderRadius.circular(3),
+                    Padding(
+                      padding:
+                          EdgeInsets.symmetric(horizontal: _pagePadding(wide)),
+                      child: SectionHeading(
+                        kicker: 'STYLE IT WITH',
+                        title: context.tr('completeTheLook'),
+                        route: '/products',
                       ),
                     ),
-                    Expanded(
-                      child: Text(
-                        context.tr('related'),
-                        style: Theme.of(context).textTheme.titleLarge,
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      height: 294,
+                      child: ListView.separated(
+                        physics: const BouncingScrollPhysics(),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: _pagePadding(wide),
+                        ),
+                        scrollDirection: Axis.horizontal,
+                        itemCount: items.length,
+                        separatorBuilder: (_, _) => const SizedBox(width: 14),
+                        itemBuilder: (_, i) => SizedBox(
+                          width: wide >= 1000
+                              ? 218
+                              : wide >= 600
+                              ? 196
+                              : 170,
+                          child: ProductCard(product: items[i]),
+                        ),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 14),
-                SizedBox(
-                  height: 296,
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: items.length,
-                    separatorBuilder: (_, _) => const SizedBox(width: 12),
-                    itemBuilder: (_, i) => SizedBox(
-                      width: 176,
-                      child: ProductCard(product: items[i]),
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
     );
   }

@@ -28,19 +28,19 @@ class MarinaColors {
   static const onGold = Color(0xFF241B07);
 
   // Day palette.
-  static const ivory = Color(0xFFF7F5F0);
+  static const ivory = Color(0xFFF6F0E4);
   static const nearWhite = ivory;
-  static const sand = Color(0xFFF1ECE1);
+  static const sand = Color(0xFFEFE7D4);
   static const softBlue = sand; // legacy alias — warm container tint
-  static const ink = Color(0xFF171B22);
-  static const muted = Color(0xFF6E727B);
-  static const line = Color(0xFFE1DACA);
+  static const ink = Color(0xFF1E1A12);
+  static const muted = Color(0xFF8A8069);
+  static const line = Color(0xFFE6DAC0);
 
   // Night palette.
-  static const nightBg = Color(0xFF0C1017);
-  static const nightSurface = Color(0xFF151B28);
-  static const nightSurfaceSoft = Color(0xFF1B2231);
-  static const nightLine = Color(0xFF283042);
+  static const nightBg = Color(0xFF070C15);
+  static const nightSurface = Color(0xFF0F1726);
+  static const nightSurfaceSoft = Color(0xFF172134);
+  static const nightLine = Color(0xFF1F2F4C);
   static const nightInk = Color(0xFFF3F5F9);
   static const nightMuted = Color(0xFF98A1B0);
 
@@ -116,8 +116,8 @@ class MarinaPalette {
   static const light = MarinaPalette(
     brightness: Brightness.light,
     background: MarinaColors.ivory,
-    backgroundAlt: Colors.white,
-    surface: Colors.white,
+    backgroundAlt: const Color(0xFFFBF6EA),
+    surface: const Color(0xFFFFFCF5),
     surfaceSoft: MarinaColors.sand,
     ink: MarinaColors.ink,
     muted: MarinaColors.muted,
@@ -129,7 +129,8 @@ class MarinaPalette {
     headerTop: MarinaColors.navy,
     headerBottom: MarinaColors.midnight,
     cardShadow: [
-      BoxShadow(color: Color(0x14142033), blurRadius: 26, offset: Offset(0, 12)),
+      BoxShadow(color: Color(0x1E3B2F14), blurRadius: 30, offset: Offset(0, 14)),
+      BoxShadow(color: Color(0x0D3B2F14), blurRadius: 6, offset: Offset(0, 3)),
     ],
   );
 
@@ -149,7 +150,7 @@ class MarinaPalette {
     headerTop: MarinaColors.midnight,
     headerBottom: Color(0xFF070B12),
     cardShadow: [
-      BoxShadow(color: Color(0x59000000), blurRadius: 26, offset: Offset(0, 12)),
+      BoxShadow(color: Color(0x73000000), blurRadius: 30, offset: Offset(0, 16)),
     ],
   );
 }
@@ -168,7 +169,7 @@ class MarinaGradients {
   static const gold = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFFE7CE96), MarinaColors.gold, Color(0xFFAD8840)],
+    colors: [Color(0xFFEED9A4), MarinaColors.gold, Color(0xFFA87F2C)],
   );
 
   static const goldSheen = LinearGradient(
@@ -488,7 +489,7 @@ class MarinaTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: dark ? const Color(0xFF101624) : Colors.white,
+        fillColor: dark ? const Color(0xFF0C1322) : const Color(0xFFFFFCF5),
         labelStyle: TextStyle(color: p.muted, fontWeight: FontWeight.w500),
         hintStyle: TextStyle(color: p.muted.withValues(alpha: .75)),
         contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 17),
