@@ -647,9 +647,11 @@ class SectionHeading extends StatelessWidget {
     required this.kicker,
     required this.title,
     required this.route,
+    this.plate,
   });
 
   final String kicker, title, route;
+  final String? plate;
 
   @override
   Widget build(BuildContext context) {
@@ -663,7 +665,7 @@ class SectionHeading extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                kicker,
+                plate == null ? kicker : 'N°$plate · $kicker',
                 style: MarinaType.kicker(
                   context,
                   color: p.gold,
