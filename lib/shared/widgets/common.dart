@@ -1099,50 +1099,54 @@ class _MarinaTickerState extends State<MarinaTicker>
           bottom: BorderSide(color: p.line.withValues(alpha: .8)),
         ),
       ),
+      // Bounded height (42) => OverflowBox can never see infinite constraints;
+      // maxWidth: infinity => the wide row may legally exceed the viewport
+      // (no overflow stripes) while ClipRect crops the painting.
       child: ClipRect(
         child: AnimatedBuilder(
           animation: _controller,
           builder: (context, child) {
             final shift = _controller.value * segment;
-            return Align(
-              alignment: AlignmentDirectional.centerStart,
-              child: Transform.translate(
-                offset: Offset(rtl ? shift - segment : -shift, 0),
-                child: child,
-              ),
+            return Transform.translate(
+              offset: Offset(rtl ? shift - segment : -shift, 0),
+              child: child,
             );
           },
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              for (var n = 0; n < 4; n++)
-                for (final item in widget.items)
-                  SizedBox(
-                    width: 400,
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            item.toUpperCase(),
-                            maxLines: 1,
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing:
-                                  MarinaType.isArabic(context) ? 0 : 2.8,
-                              color: p.gold,
+          child: OverflowBox(
+            maxWidth: double.infinity,
+            alignment: AlignmentDirectional.centerStart,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (var n = 0; n < 4; n++)
+                  for (final item in widget.items)
+                    SizedBox(
+                      width: 400,
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              item.toUpperCase(),
+                              maxLines: 1,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing:
+                                    MarinaType.isArabic(context) ? 0 : 2.8,
+                                color: p.gold,
+                              ),
                             ),
                           ),
-                        ),
-                        Text(
-                          ' ✦ ',
-                          style: TextStyle(color: p.gold, fontSize: 11),
-                        ),
-                      ],
+                          Text(
+                            ' \u2726 ',
+                            style: TextStyle(color: p.gold, fontSize: 11),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
