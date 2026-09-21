@@ -198,14 +198,17 @@ class _Stars extends StatelessWidget {
   final double size;
 
   @override
-  Widget build(BuildContext context) => Row(
-    mainAxisSize: MainAxisSize.min,
-    children: List.generate(
-      5,
-      (i) => Icon(
-        i < value ? Icons.star_rounded : Icons.star_border_rounded,
-        size: size,
-        color: MarinaPalette.of(context).gold,
+  Widget build(BuildContext context) => FittedBox(
+    fit: BoxFit.scaleDown,
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: List.generate(
+        5,
+        (i) => Icon(
+          i < value ? Icons.star_rounded : Icons.star_border_rounded,
+          size: size,
+          color: MarinaPalette.of(context).gold,
+        ),
       ),
     ),
   );
