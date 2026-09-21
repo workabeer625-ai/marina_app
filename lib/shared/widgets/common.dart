@@ -1093,56 +1093,56 @@ class _MarinaTickerState extends State<MarinaTicker>
     final rtl = Directionality.of(context) == TextDirection.rtl;
     final segment = widget.items.length * 400.0;
     return Container(
+      height: 42,
       decoration: BoxDecoration(
         border: Border(
           bottom: BorderSide(color: p.line.withValues(alpha: .8)),
         ),
       ),
-      padding: const EdgeInsets.symmetric(vertical: 11),
       child: ClipRect(
         child: AnimatedBuilder(
           animation: _controller,
           builder: (context, child) {
             final shift = _controller.value * segment;
-            return Transform.translate(
-              offset: Offset(rtl ? shift - segment : -shift, 0),
-              child: child,
+            return Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: Transform.translate(
+                offset: Offset(rtl ? shift - segment : -shift, 0),
+                child: child,
+              ),
             );
           },
-          child: OverflowBox(
-            maxWidth: double.infinity,
-            alignment: AlignmentDirectional.centerStart,
-            child: Row(
-              children: [
-                for (var n = 0; n < 4; n++)
-                  for (final item in widget.items)
-                    SizedBox(
-                      width: 400,
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              item.toUpperCase(),
-                              maxLines: 1,
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w800,
-                                letterSpacing:
-                                    MarinaType.isArabic(context) ? 0 : 2.8,
-                                color: p.gold,
-                              ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (var n = 0; n < 4; n++)
+                for (final item in widget.items)
+                  SizedBox(
+                    width: 400,
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            item.toUpperCase(),
+                            maxLines: 1,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing:
+                                  MarinaType.isArabic(context) ? 0 : 2.8,
+                              color: p.gold,
                             ),
                           ),
-                          Text(
-                            ' ✦ ',
-                            style: TextStyle(color: p.gold, fontSize: 11),
-                          ),
-                        ],
-                      ),
+                        ),
+                        Text(
+                          ' ✦ ',
+                          style: TextStyle(color: p.gold, fontSize: 11),
+                        ),
+                      ],
                     ),
-              ],
-            ),
+                  ),
+            ],
           ),
         ),
       ),
