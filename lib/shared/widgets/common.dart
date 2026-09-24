@@ -254,6 +254,29 @@ IconData marinaCategoryIcon(String name, {int fallbackIndex = 0}) {
   return fallback[fallbackIndex % fallback.length];
 }
 
+/// Soft pastel "stage" behind product imagery — cycles per card, day & night.
+/// This is the signature of the boutique look: every product sits on its own
+/// gentle color wash (sage / powder / blush / champagne).
+Color marinaStageTint(MarinaPalette p, int seed) {
+  final i = seed < 0 ? -seed : seed;
+  if (p.isDark) {
+    const tints = [
+      Color(0xFF16201B),
+      Color(0xFF151D2B),
+      Color(0xFF221B1E),
+      Color(0xFF1F1B12),
+    ];
+    return tints[i % tints.length];
+  }
+  const tints = [
+    Color(0xFFE7EDE3), // sage
+    Color(0xFFE3EAF4), // powder
+    Color(0xFFF4E7E3), // blush
+    Color(0xFFF6EDDA), // champagne
+  ];
+  return tints[i % tints.length];
+}
+
 
 /// Cinematic entrance: fades + slides up with a stagger based on [index].
 class FadeSlideIn extends StatefulWidget {
@@ -618,106 +641,115 @@ class ProductCard extends ConsumerWidget {
         hasDiscount ? (((1 - product.price / compareAt) * 100).round()) : 0;
     final canQuickAdd =
         product.variantId != null && product.variantId!.isNotEmpty;
+    final tint = marinaStageTint(p, plate ?? product.name.hashCode.abs());
 
     return Material(
       color: Colors.transparent,
       clipBehavior: Clip.antiAlias,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
       child: InkWell(
         onTap: () => context.push('/product/${product.id}', extra: product),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Expanded(
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  product.image == null
-                      ? ColoredBox(
-                          color: p.surfaceSoft,
-                          child: Icon(
-                            Icons.checkroom_rounded,
-                            size: 44,
-                            color: p.muted.withValues(alpha: .55),
-                          ),
-                        )
-                      : MarinaNetworkImage(
-                          url: product.image!,
-                          fit: BoxFit.cover,
-                        ),
-                  if (hasDiscount)
-                    PositionedDirectional(
-                      top: 10,
-                      start: 10,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 9,
-                          vertical: 5,
-                        ),
-                        decoration: BoxDecoration(
-                          gradient: MarinaGradients.gold,
-                          borderRadius: BorderRadius.circular(10),
-                          boxShadow: [
-                            BoxShadow(
-                              color: MarinaColors.gold.withValues(alpha: .4),
-                              blurRadius: 12,
-                              offset: const Offset(0, 4),
+              child: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: tint,
+                  borderRadius: BorderRadius.circular(30),
+                ),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    product.image == null
+                        ? Center(
+                            child: Icon(
+                              Icons.checkroom_rounded,
+                              size: 44,
+                              color: p.muted.withValues(alpha: .55),
                             ),
-                          ],
-                        ),
-                        child: Text(
-                          '-$discount%',
-                          style: const TextStyle(
-                            color: MarinaColors.onGold,
-                            fontSize: 10.5,
-                            fontWeight: FontWeight.w800,
-                            height: 1,
+                          )
+                        : ClipRRect(
+                            borderRadius: BorderRadius.circular(22),
+                            child: MarinaNetworkImage(
+                              url: product.image!,
+                              fit: BoxFit.cover,
+                            ),
                           ),
-                        ),
-                      ),
-                    ),
-                  if (canQuickAdd)
-                    PositionedDirectional(
-                      bottom: 10,
-                      end: 10,
-                      child: GestureDetector(
-                        onTap: () => _quickAdd(context, ref),
+                    if (hasDiscount)
+                      PositionedDirectional(
+                        top: 8,
+                        start: 8,
                         child: Container(
-                          width: 36,
-                          height: 36,
-                          decoration: const BoxDecoration(
-                            shape: BoxShape.circle,
-                            gradient: MarinaGradients.gold,
-                            boxShadow: [
-                              BoxShadow(
-                                color: Color(0x66C29B4C),
-                                blurRadius: 14,
-                                offset: Offset(0, 5),
-                              ),
-                            ],
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 9,
+                            vertical: 5,
                           ),
-                          child: const Icon(
-                            Icons.add_rounded,
-                            size: 20,
-                            color: MarinaColors.onGold,
+                          decoration: BoxDecoration(
+                            color: p.isDark
+                                ? MarinaColors.midnight.withValues(alpha: .85)
+                                : Colors.white,
+                            borderRadius: BorderRadius.circular(11),
+                          ),
+                          child: Text(
+                            '-$discount%',
+                            style: TextStyle(
+                              color: p.isDark
+                                  ? MarinaColors.goldBright
+                                  : MarinaColors.goldDeep,
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w800,
+                              height: 1,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                ],
+                    if (canQuickAdd)
+                      PositionedDirectional(
+                        bottom: 8,
+                        end: 8,
+                        child: GestureDetector(
+                          onTap: () => _quickAdd(context, ref),
+                          child: Container(
+                            width: 38,
+                            height: 38,
+                            decoration: BoxDecoration(
+                              color: p.isDark
+                                  ? MarinaColors.midnight.withValues(alpha: .85)
+                                  : Colors.white,
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: .12),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: Icon(
+                              Icons.add_rounded,
+                              size: 20,
+                              color: p.gold,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
               ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(13, 11, 13, 13),
+              padding: const EdgeInsets.fromLTRB(6, 12, 6, 12),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   if (plate != null) ...[
                     Text(
                       'N°${plate.toString().padLeft(2, '0')}',
                       style: TextStyle(
                         fontFamily: 'Marcellus',
-                        fontSize: 12.5,
+                        fontSize: 12,
                         letterSpacing: 1,
                         height: 1,
                         color: p.gold,
@@ -729,34 +761,16 @@ class ProductCard extends ConsumerWidget {
                     product.name,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
                       height: 1.32,
-                      letterSpacing: .1,
                       color: p.ink,
                     ),
                   ),
-                  const SizedBox(height: 7),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.baseline,
-                    textBaseline: TextBaseline.alphabetic,
-                    children: [
-                      MarinaPrice(value: product.price),
-                      if (hasDiscount) ...[
-                        const Spacer(),
-                        Text(
-                          'SAR ${compareAt.toStringAsFixed(0)}',
-                          maxLines: 1,
-                          style: TextStyle(
-                            fontSize: 10.5,
-                            color: p.muted.withValues(alpha: .85),
-                            decoration: TextDecoration.lineThrough,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
+                  const SizedBox(height: 6),
+                  MarinaPrice(value: product.price),
                 ],
               ),
             ),

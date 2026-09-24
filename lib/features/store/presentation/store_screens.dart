@@ -347,6 +347,102 @@ class _MagazineBody extends ConsumerWidget {
                     ),
                   ),
                 ),
+                const SizedBox(height: 30),
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: _pagePadding(wide)),
+                  child: FadeSlideIn(
+                    index: 2,
+                    child: MarinaPressable(
+                      onTap: () => context.push('/offers'),
+                      borderRadius: BorderRadius.circular(30),
+                      child: Container(
+                        height: 148,
+                        padding: const EdgeInsets.all(24),
+                        decoration: BoxDecoration(
+                          color: p.isDark
+                              ? p.surfaceSoft
+                              : const Color(0xFFF6EDDA),
+                          borderRadius: BorderRadius.circular(30),
+                          border: Border.all(
+                            color: p.gold.withValues(alpha: .35),
+                          ),
+                          boxShadow: p.cardShadow,
+                        ),
+                        child: Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            PositionedDirectional(
+                              end: -26,
+                              top: -30,
+                              child: Container(
+                                width: 130,
+                                height: 130,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: p.gold.withValues(alpha: .22),
+                                    width: 1.4,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            PositionedDirectional(
+                              end: 34,
+                              bottom: -46,
+                              child: Container(
+                                width: 96,
+                                height: 96,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: p.gold.withValues(alpha: .15),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'LIMITED TIME',
+                                  style: MarinaType.kicker(
+                                    context,
+                                    color: p.gold,
+                                    size: 10,
+                                  ),
+                                ),
+                                const Spacer(),
+                                Text(
+                                  context.tr('offers'),
+                                  style: MarinaType.display(context, size: 26),
+                                ),
+                                const SizedBox(height: 10),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 14,
+                                    vertical: 8,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    gradient: MarinaGradients.gold,
+                                    borderRadius: BorderRadius.circular(13),
+                                  ),
+                                  child: Text(
+                                    context.tr('explore'),
+                                    style: const TextStyle(
+                                      color: MarinaColors.onGold,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
                 const SizedBox(height: 36),
                 _EditorialRail(
                   stagger: 2,
@@ -437,6 +533,16 @@ class _SearchPill extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(color: p.muted, fontSize: 14),
                 ),
+              ),
+              Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  color: p.goldSoft,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: p.gold.withValues(alpha: .3)),
+                ),
+                child: Icon(Icons.tune_rounded, size: 16, color: p.gold),
               ),
             ],
           ),
@@ -1350,6 +1456,17 @@ class _DetailState extends ConsumerState<ProductDetailScreen> {
         final selected = _selected(product);
         final wide = MediaQuery.sizeOf(context).width;
         final rtl = Directionality.of(context) == TextDirection.rtl;
+        final stageColor = marinaStageTint(p, product.id.hashCode.abs());
+        final dotColors = colors.map((colorName) {
+          final hex = _variantsOf(product, colorName)
+              .map((v) => v.colorHex)
+              .firstWhere((h) => h?.isNotEmpty == true, orElse: () => null);
+          final parsed = int.tryParse(
+            'FF${hex?.replaceAll('#', '') ?? ''}',
+            radix: 16,
+          );
+          return parsed != null ? Color(parsed) : p.surfaceSoft;
+        }).toList();
 
         return Scaffold(
           backgroundColor: p.background,
@@ -1371,6 +1488,18 @@ class _DetailState extends ConsumerState<ProductDetailScreen> {
                               _ProductGallery(
                                 images: product.images,
                                 controller: _galleryController,
+                                stageColor: stageColor,
+                                dotColors: dotColors,
+                                selectedDot: selectedColor == null
+                                    ? null
+                                    : colors.indexOf(selectedColor!),
+                                onDotSelected: (i) => setState(() {
+                                  selectedColor = colors[i];
+                                  selectedVariantId = null;
+                                  quantity = 1;
+                                }),
+                                onReviewsTap: () => context
+                                    .push('/product/${product.id}/reviews'),
                               ),
                               SafeArea(
                                 child: Padding(
@@ -1756,46 +1885,90 @@ class _DetailState extends ConsumerState<ProductDetailScreen> {
                         ],
                       ),
                     ),
-                    // ── Sticky purchase bar ──
-                    Container(
-                      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-                      decoration: BoxDecoration(
-                        color: p.surface,
-                        border: Border(top: BorderSide(color: p.line)),
-                      ),
-                      child: SafeArea(
-                        top: false,
-                        child: Row(
-                          children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                if (quantity > 1)
-                                  Text(
-                                    'x${quantity.toString().padLeft(2, '0')}',
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w800,
-                                      color: p.gold,
+                    // ── Floating purchase bar ──
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(14, 8, 14, 12),
+                      child: Container(
+                        padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
+                        decoration: BoxDecoration(
+                          color: p.surface,
+                          borderRadius: BorderRadius.circular(26),
+                          border: Border.all(color: p.line),
+                          boxShadow: p.cardShadow,
+                        ),
+                        child: SafeArea(
+                          top: false,
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    if (quantity > 1)
+                                      Text(
+                                        'x${quantity.toString().padLeft(2, '0')}',
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w800,
+                                          color: p.gold,
+                                        ),
+                                      ),
+                                    MarinaPrice(
+                                      value: selected == null
+                                          ? 0
+                                          : selected.price * quantity,
+                                      large: true,
                                     ),
-                                  ),
-                                MarinaPrice(
-                                  value: selected == null
-                                      ? 0
-                                      : selected.price * quantity,
-                                  large: true,
+                                  ],
                                 ),
-                              ],
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: MarinaGoldButton(
-                                label: selected == null || !selected.available
-                                    ? context.tr('outOfStock')
-                                    : context.tr('addToBag'),
-                                icon: Icons.add_shopping_cart_rounded,
-                                busy: adding,
-                                onPressed: selected == null ||
+                              ),
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: p.background,
+                                  borderRadius: BorderRadius.circular(17),
+                                  border: Border.all(color: p.line),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    _StepButton(
+                                      icon: Icons.remove_rounded,
+                                      onTap: quantity > 1
+                                          ? () => setState(() => quantity--)
+                                          : null,
+                                    ),
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                      ),
+                                      child: Text(
+                                        quantity.toString().padLeft(2, '0'),
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w800,
+                                          fontSize: 14.5,
+                                          letterSpacing: 1,
+                                          color: p.ink,
+                                          fontFeatures: const [
+                                            FontFeature.tabularFigures(),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                    _StepButton(
+                                      icon: Icons.add_rounded,
+                                      onTap: selected != null &&
+                                              quantity <
+                                                  selected.availableQuantity
+                                          ? () => setState(() => quantity++)
+                                          : null,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              GestureDetector(
+                                onTap:
+                                    selected == null ||
                                         !selected.available ||
                                         adding
                                     ? null
@@ -1842,12 +2015,56 @@ class _DetailState extends ConsumerState<ProductDetailScreen> {
                                     }
                                   }
                                 },
+                                child: Opacity(
+                                  opacity: selected != null &&
+                                          selected.available
+                                      ? 1
+                                      : .45,
+                                  child: Container(
+                                    width: 54,
+                                    height: 54,
+                                    decoration: BoxDecoration(
+                                      color: p.isDark
+                                          ? null
+                                          : MarinaColors.navy,
+                                      gradient: p.isDark
+                                          ? MarinaGradients.gold
+                                          : null,
+                                      borderRadius: BorderRadius.circular(19),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: (p.isDark
+                                                  ? MarinaColors.gold
+                                                  : MarinaColors.navy)
+                                              .withValues(alpha: .35),
+                                          blurRadius: 16,
+                                          offset: const Offset(0, 6),
+                                        ),
+                                      ],
+                                    ),
+                                    child: adding
+                                        ? const Padding(
+                                            padding: EdgeInsets.all(17),
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              color: MarinaColors.onGold,
+                                            ),
+                                          )
+                                        : Icon(
+                                            Icons.add_shopping_cart_rounded,
+                                            size: 22,
+                                            color: p.isDark
+                                                ? MarinaColors.onGold
+                                                : MarinaColors.goldBright,
+                                          ),
+                                  ),
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
-                    ),
+                    ),,
                   ],
                 ),
               ),
@@ -1956,10 +2173,23 @@ class _PerkChip extends StatelessWidget {
 }
 
 class _ProductGallery extends StatefulWidget {
-  const _ProductGallery({required this.images, this.controller});
+  const _ProductGallery({
+    required this.images,
+    required this.stageColor,
+    this.controller,
+    this.dotColors = const [],
+    this.selectedDot,
+    this.onDotSelected,
+    this.onReviewsTap,
+  });
 
   final List<String> images;
   final PageController? controller;
+  final Color stageColor;
+  final List<Color> dotColors;
+  final int? selectedDot;
+  final ValueChanged<int>? onDotSelected;
+  final VoidCallback? onReviewsTap;
 
   @override
   State<_ProductGallery> createState() => _ProductGalleryState();
@@ -1970,15 +2200,16 @@ class _ProductGalleryState extends State<_ProductGallery> {
 
   @override
   Widget build(BuildContext context) {
+    final p = MarinaPalette.of(context);
     if (widget.images.isEmpty) {
       return Container(
         height: 420,
         alignment: Alignment.center,
-        decoration: const BoxDecoration(color: MarinaColors.midnight),
+        color: widget.stageColor,
         child: Icon(
           Icons.checkroom_rounded,
           size: 72,
-          color: Colors.white24,
+          color: p.muted.withValues(alpha: .4),
         ),
       );
     }
@@ -1988,21 +2219,97 @@ class _ProductGalleryState extends State<_ProductGallery> {
         child: Stack(
           alignment: Alignment.bottomCenter,
           children: [
-            PageView.builder(
-              controller: widget.controller,
-              itemCount: widget.images.length,
-              onPageChanged: (v) => setState(() => current = v),
-              itemBuilder: (_, i) => ColoredBox(
-                color: MarinaColors.midnight,
-                child: MarinaNetworkImage(
-                  url: widget.images[i],
-                  fit: BoxFit.cover,
+            Positioned.fill(child: ColoredBox(color: widget.stageColor)),
+            PositionedDirectional(
+              end: -44,
+              top: 26,
+              child: Container(
+                width: 168,
+                height: 168,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: p.gold.withValues(alpha: .2),
+                    width: 1.4,
+                  ),
                 ),
               ),
             ),
+            PositionedDirectional(
+              start: -36,
+              bottom: 150,
+              child: Container(
+                width: 120,
+                height: 120,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: p.gold.withValues(alpha: .14)),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 62),
+              child: PageView.builder(
+                controller: widget.controller,
+                itemCount: widget.images.length,
+                onPageChanged: (v) => setState(() => current = v),
+                itemBuilder: (_, i) => ClipRRect(
+                  borderRadius: BorderRadius.circular(26),
+                  child: MarinaNetworkImage(
+                    url: widget.images[i],
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ),
+            ),
+            if (widget.dotColors.length > 1)
+              PositionedDirectional(
+                end: 12,
+                top: 26,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 7,
+                    horizontal: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: p.isDark
+                        ? MarinaColors.midnight.withValues(alpha: .8)
+                        : Colors.white.withValues(alpha: .85),
+                    borderRadius: BorderRadius.circular(19),
+                    border: Border.all(color: p.line.withValues(alpha: .7)),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      for (var i = 0; i < widget.dotColors.length; i++)
+                        GestureDetector(
+                          onTap: widget.onDotSelected == null
+                              ? null
+                              : () => widget.onDotSelected!(i),
+                          child: AnimatedContainer(
+                            duration: MarinaMotion.fast,
+                            width: 17,
+                            height: 17,
+                            margin: const EdgeInsets.symmetric(vertical: 3),
+                            decoration: BoxDecoration(
+                              color: widget.dotColors[i],
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: widget.selectedDot == i
+                                    ? p.gold
+                                    : p.line,
+                                width: widget.selectedDot == i ? 2.2 : 1,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
             if (widget.images.length > 1)
               Positioned(
-                bottom: 18,
+                bottom: 14,
                 left: 0,
                 right: 0,
                 child: Row(
@@ -2021,7 +2328,7 @@ class _ProductGalleryState extends State<_ProductGallery> {
                         height: 38,
                         margin: const EdgeInsets.symmetric(horizontal: 4),
                         decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(6),
+                          borderRadius: BorderRadius.circular(12),
                           border: Border.all(
                             color: i == current
                                 ? MarinaColors.goldBright
@@ -2030,12 +2337,63 @@ class _ProductGalleryState extends State<_ProductGallery> {
                           ),
                         ),
                         child: ClipRRect(
-                          borderRadius: BorderRadius.circular(5),
+                          borderRadius: BorderRadius.circular(11),
                           child: MarinaNetworkImage(
                             url: widget.images[i],
                             fit: BoxFit.cover,
                           ),
                         ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            if (widget.onReviewsTap != null)
+              Positioned(
+                bottom: 64,
+                left: 0,
+                right: 0,
+                child: Center(
+                  child: GestureDetector(
+                    onTap: widget.onReviewsTap,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 13,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: p.isDark
+                            ? MarinaColors.midnight.withValues(alpha: .85)
+                            : Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: p.line.withValues(alpha: .8)),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: .1),
+                            blurRadius: 14,
+                            offset: const Offset(0, 5),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.star_rounded, size: 15, color: p.gold),
+                          const SizedBox(width: 6),
+                          Text(
+                            context.tr('reviews'),
+                            style: TextStyle(
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w800,
+                              color: p.ink,
+                            ),
+                          ),
+                          Icon(
+                            Icons.chevron_right_rounded,
+                            size: 14,
+                            color: p.muted,
+                          ),
+                        ],
                       ),
                     ),
                   ),
