@@ -2064,7 +2064,7 @@ class _DetailState extends ConsumerState<ProductDetailScreen> {
                           ),
                         ),
                       ),
-                    ),,
+                    ),
                   ],
                 ),
               ),
