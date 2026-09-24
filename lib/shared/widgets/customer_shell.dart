@@ -106,7 +106,7 @@ class _CustomerShellState extends ConsumerState<CustomerShell> {
                       BoxShadow(
                         color: p.isDark
                             ? const Color(0x73000000)
-                            : const Color(0x1E101B2D),
+                            : const Color(0x1E023859),
                         blurRadius: 30,
                         offset: const Offset(0, 14),
                       ),

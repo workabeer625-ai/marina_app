@@ -147,10 +147,10 @@ class _MagazineBody extends ConsumerWidget {
                     end: Alignment.bottomCenter,
                     stops: const [0, .42, .78, 1],
                     colors: const [
-                      Color(0xD9070C15),
-                      Color(0x33070C15),
-                      Color(0xB8070C15),
-                      Color(0xFF070C15),
+                      Color(0xD9011C40),
+                      Color(0x33011C40),
+                      Color(0xB8011C40),
+                      Color(0xFF011C40),
                     ],
                   ),
                 ),
@@ -232,7 +232,7 @@ class _MagazineBody extends ConsumerWidget {
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
-                            color: const Color(0xFFC9D3E3),
+                            color: const Color(0xFFB9D6E4),
                             fontSize: desktop ? 15 : 13.5,
                             height: 1.5,
                           ),
@@ -361,7 +361,7 @@ class _MagazineBody extends ConsumerWidget {
                         decoration: BoxDecoration(
                           color: p.isDark
                               ? p.surfaceSoft
-                              : const Color(0xFFF6EDDA),
+                              : const Color(0xFFE4F2F6),
                           borderRadius: BorderRadius.circular(30),
                           border: Border.all(
                             color: p.gold.withValues(alpha: .35),

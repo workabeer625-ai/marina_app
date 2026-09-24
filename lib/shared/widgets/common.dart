@@ -261,18 +261,18 @@ Color marinaStageTint(MarinaPalette p, int seed) {
   final i = seed < 0 ? -seed : seed;
   if (p.isDark) {
     const tints = [
-      Color(0xFF16201B),
-      Color(0xFF151D2B),
-      Color(0xFF221B1E),
-      Color(0xFF1F1B12),
+      Color(0xFF022950),
+      Color(0xFF033159),
+      Color(0xFF022344),
+      Color(0xFF04375F),
     ];
     return tints[i % tints.length];
   }
   const tints = [
-    Color(0xFFE7EDE3), // sage
-    Color(0xFFE3EAF4), // powder
-    Color(0xFFF4E7E3), // blush
-    Color(0xFFF6EDDA), // champagne
+    Color(0xFFDFF2F6), // ice
+    Color(0xFFE0EBF3), // powder blue
+    Color(0xFFD9EAEF), // teal mist
+    Color(0xFFE6F0F6) // pale steel
   ];
   return tints[i % tints.length];
 }
@@ -942,7 +942,7 @@ class MarinaGoldButton extends StatelessWidget {
           gradient: enabled
               ? MarinaGradients.gold
               : const LinearGradient(
-                  colors: [Color(0xFFB7A274), Color(0xFFB7A274)],
+                  colors: [Color(0xFF9FBCCB), Color(0xFF9FBCCB)],
                 ),
           boxShadow: enabled
               ? [

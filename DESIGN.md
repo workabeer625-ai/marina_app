@@ -8,9 +8,12 @@ A digital fashion experience with a global luxury-house identity.
 
 ## 🎭 الشخصيتان / Two personalities
 
-- **Light — Luxury Boutique Day**: عاجي دافئ + كريمي + ذهبي شمبانيا، ثلاث طبقات عمق واضحة
-  (خلفية عاجية / أسطح كريمية / بطاقات دافئة) مع ظلال ناعمة دافئة. لا أبيض مسطّح.
-- **Dark — Luxury Night Experience**: كحلي منتصف الليل العميق + ذهبي متوهج، مسرح مسائي سينمائي.
+- **Light — LUNA at Dawn**: خلفية جليدية فاتحة #EDF4F7، أسطح ثلجية، وأكسنت أزرق فولاذي
+  #26658C — بوتيك صباحي بارد منعش. لا أبيض مسطّح.
+- **Dark — LUNA at Midnight**: منتصف ليل محيطي #011C40 + تركواز #54ACBF وسماوي قمري
+  متوهج #A7EBF2 — ضوء قمر على المحيط.
+
+**LUNA palette**: #A7EBF2 · #54ACBF · #26658C · #023859 · #011C40
 
 ## 🎬 التجربة / Experience
 
